@@ -49,7 +49,12 @@ export function saveReportFilters(reportFilters: ReportFilters): void {
 }
 
 function headerSignature(headers: string[]): string {
-  return headers.map((header) => header.trim().toLowerCase()).join("|");
+  const normalized = headers.map((header) => header.trim().toLowerCase()).join("|");
+  let hash = 5381;
+  for (const character of normalized) {
+    hash = (hash * 33) ^ character.charCodeAt(0);
+  }
+  return `headers:${(hash >>> 0).toString(36)}`;
 }
 
 function sanitizeHeaderMappings(value: unknown): Record<string, ColumnMapping> {
@@ -57,11 +62,14 @@ function sanitizeHeaderMappings(value: unknown): Record<string, ColumnMapping> {
     return {};
   }
   return Object.fromEntries(
-    Object.entries(value).map(([signature, mapping]) => [
-      signature,
-      sanitizeMapping(mapping),
-    ]),
+    Object.entries(value)
+      .filter(([signature]) => isSafeHeaderSignature(signature))
+      .map(([signature, mapping]) => [signature, sanitizeMapping(mapping)]),
   );
+}
+
+function isSafeHeaderSignature(value: string): boolean {
+  return /^headers:[a-z0-9]+$/.test(value);
 }
 
 function sanitizeMapping(value: unknown): ColumnMapping {
