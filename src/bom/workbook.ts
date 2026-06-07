@@ -103,7 +103,7 @@ function worksheetRows(parsed: ParsedWorkbook, sheetName: string): unknown[][] {
   if (!sheet) {
     throw new Error(`Worksheet "${sheetName}" was not found.`);
   }
-  return XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, blankrows: false, defval: "" });
+  return XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, blankrows: true, defval: "" });
 }
 
 function valuesForWidth(row: unknown[], width: number): string[] {

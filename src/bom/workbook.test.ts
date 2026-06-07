@@ -10,6 +10,13 @@ const rows = [
   ["20", "PN-2", "C-2", "Regulator", "TI", "TPS7A", 1, "U1"],
 ];
 
+const rowsWithBlankBeforeHeader = [
+  ["Customer BOM"],
+  [],
+  ["Item", "Internal PN", "Customer PN", "Description", "Mfr", "MPN", "Qty", "Ref Des"],
+  ["10", "PN-1", "C-1", "Resistor", "Yageo", "RC0603", 2, "R1, R2"],
+];
+
 describe("workbook parsing", () => {
   it("rejects invalid workbook bytes with clear guidance", () => {
     const invalid = new TextEncoder().encode("not xlsx").buffer;
@@ -41,6 +48,21 @@ describe("workbook parsing", () => {
     expect(preview.columns[0]).toEqual({ index: 0, label: "A", header: "Item" });
     expect(preview.rows[0].isHeader).toBe(true);
     expect(preview.rows[1].values.slice(0, 3)).toEqual(["10", "PN-1", "C-1"]);
+  });
+
+  it("preserves worksheet row numbers when blank rows appear before the header", () => {
+    const workbook = parseWorkbook(makeWorkbookBuffer(rowsWithBlankBeforeHeader));
+    const preview = previewWorksheet(workbook, "BOM", 3, 1);
+    const mapped = extractMappedRows(workbook, "BOM", 3, {
+      line_item: 0,
+      internal_part_number: 1,
+      customer_part_number: 2,
+    });
+
+    expect(preview.rows[0].rowNumber).toBe(3);
+    expect(preview.rows[0].values[0]).toBe("Item");
+    expect(preview.rows[1].rowNumber).toBe(4);
+    expect(mapped[0].line_item).toBe("10");
   });
 
   it("extracts mapped rows by column index as trimmed strings", () => {
