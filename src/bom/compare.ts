@@ -127,12 +127,20 @@ function groupByMatchKey(rows: BomRow[], matchKey: MatchKey): Map<string, BomRow
 function manufacturerParts(rows: BomRow[]): Map<string, BomRow> {
   const parts = new Map<string, BomRow>();
   for (const row of rows) {
-    const key = normalizeText(row.manufacturer_part_number);
+    const key = manufacturerPartIdentity(row);
     if (key) {
       parts.set(key, row);
     }
   }
   return parts;
+}
+
+function manufacturerPartIdentity(row: BomRow): string {
+  const partNumber = normalizeText(row.manufacturer_part_number);
+  if (!partNumber) {
+    return "";
+  }
+  return `${normalizeText(row.manufacturer_name)}|${partNumber}`;
 }
 
 function partChange(row: BomRow, matchKey: MatchKey, matchValue: string): ManufacturerPartChange {

@@ -47,4 +47,36 @@ describe("compareBoms", () => {
     expect(validation.blankRowIndexes).toEqual([2]);
     expect(validation.duplicateGroups).toEqual([{ key: "10", rowIndexes: [0, 1] }]);
   });
+
+  it("treats manufacturer plus MPN as the manufacturer-part identity", () => {
+    const original = [
+      { ...baseRow, line_item: "10", manufacturer_name: "Mfr A", manufacturer_part_number: "Y" },
+      { ...baseRow, line_item: "10", manufacturer_name: "Mfr B", manufacturer_part_number: "Z" },
+    ];
+    const next = [
+      { ...baseRow, line_item: "10", manufacturer_name: "Mfr B", manufacturer_part_number: "Y" },
+      { ...baseRow, line_item: "10", manufacturer_name: "Mfr B", manufacturer_part_number: "Z" },
+    ];
+
+    const result = compareBoms(original, next, "line_item");
+
+    expect(result.manufacturerPartAdds).toEqual([
+      {
+        matchKey: "line_item",
+        matchValue: "10",
+        lineItem: "10",
+        manufacturerName: "Mfr B",
+        manufacturerPartNumber: "Y",
+      },
+    ]);
+    expect(result.manufacturerPartRemoves).toEqual([
+      {
+        matchKey: "line_item",
+        matchValue: "10",
+        lineItem: "10",
+        manufacturerName: "Mfr A",
+        manufacturerPartNumber: "Y",
+      },
+    ]);
+  });
 });
