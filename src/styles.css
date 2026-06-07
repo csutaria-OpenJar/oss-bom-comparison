@@ -360,18 +360,21 @@ legend {
 .inline-removed {
   border-radius: 4px;
   display: inline-block;
+  margin: 2px 6px 2px 0;
   padding: 2px 4px;
-  text-decoration: none;
 }
 
 .inline-added {
   background: var(--added-bg);
   color: var(--added-text);
+  text-decoration: none;
 }
 
 .inline-removed {
   background: var(--removed-bg);
   color: var(--removed-text);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
 }
 
 .row-added td {
@@ -380,6 +383,64 @@ legend {
 
 .row-removed td {
   background: var(--removed-bg);
+}
+
+.legend-row {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-weight: 650;
+  gap: 10px 14px;
+  margin: 12px 0 16px;
+}
+
+.legend-title {
+  color: var(--accent-deep);
+  font-weight: 800;
+}
+
+.annotated-bom-table th,
+.annotated-bom-table td {
+  vertical-align: middle;
+}
+
+.manufacturer-pair-cell {
+  min-width: 420px;
+}
+
+.manufacturer-subrow {
+  align-items: start;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(120px, 0.85fr) minmax(180px, 1.15fr);
+  margin: 2px 0;
+}
+
+.inline-chip {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  display: inline-block;
+  margin: 2px 6px 2px 0;
+  padding: 3px 8px;
+}
+
+.added-chip {
+  background: var(--added-bg);
+  border-color: var(--aqua-soft);
+  color: var(--added-text);
+}
+
+.removed-chip {
+  background: var(--removed-bg);
+  border-color: #f0b9b9;
+  color: var(--removed-text);
+}
+
+.unchanged-chip {
+  background: #f7f8fa;
+  border-color: var(--line);
+  color: #5f6d82;
 }
 
 .sr-only {

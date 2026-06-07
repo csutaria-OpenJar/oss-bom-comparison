@@ -77,7 +77,15 @@ export function compareBoms(originalRows: BomRow[], nextRows: BomRow[], matchKey
       }
     }
 
-    matchedRows.push({ matchKey, matchValue: next[matchKey], original, next, changes: rowChanges });
+    matchedRows.push({
+      matchKey,
+      matchValue: next[matchKey],
+      original,
+      originalRows: originalGroup,
+      next,
+      newRows: nextGroup,
+      changes: rowChanges,
+    });
   }
 
   return {

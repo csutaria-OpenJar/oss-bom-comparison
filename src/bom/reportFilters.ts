@@ -4,6 +4,10 @@ export function applyReportFilters(result: ComparisonResult, filters: ReportFilt
   const addedRows = filters.addedRows ? result.addedRows : [];
   const removedRows = filters.removedRows ? result.removedRows : [];
   const changedFields = result.changedFields.filter((change) => filters.changedFields[change.field]);
+  const matchedRows = result.matchedRows.map((row) => ({
+    ...row,
+    changes: row.changes.filter((change) => filters.changedFields[change.field]),
+  }));
   const manufacturerPartAdds = filters.manufacturerPartAdds ? result.manufacturerPartAdds : [];
   const manufacturerPartRemoves = filters.manufacturerPartRemoves ? result.manufacturerPartRemoves : [];
   const unmatchedOrBlankRows = filters.unmatchedOrBlankRows ? result.unmatchedOrBlankRows : [];
@@ -24,5 +28,6 @@ export function applyReportFilters(result: ComparisonResult, filters: ReportFilt
     manufacturerPartAdds,
     manufacturerPartRemoves,
     unmatchedOrBlankRows,
+    matchedRows,
   };
 }

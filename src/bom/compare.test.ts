@@ -79,4 +79,20 @@ describe("compareBoms", () => {
       },
     ]);
   });
+
+  it("keeps grouped original and new manufacturer rows for inline report annotations", () => {
+    const original = [
+      { ...baseRow, line_item: "10", internal_part_number: "PN-1", customer_part_number: "C-1", manufacturer_name: "Yageo", manufacturer_part_number: "KEEP" },
+      { ...baseRow, line_item: "10", internal_part_number: "PN-1", customer_part_number: "C-1", manufacturer_name: "TDK", manufacturer_part_number: "REMOVE" },
+    ];
+    const next = [
+      { ...baseRow, line_item: "10", internal_part_number: "PN-1", customer_part_number: "C-1", manufacturer_name: "Yageo", manufacturer_part_number: "KEEP" },
+      { ...baseRow, line_item: "10", internal_part_number: "PN-1", customer_part_number: "C-1", manufacturer_name: "Murata", manufacturer_part_number: "ADD" },
+    ];
+
+    const result = compareBoms(original, next, "line_item");
+
+    expect(result.matchedRows[0].originalRows.map((row) => row.manufacturer_part_number)).toEqual(["KEEP", "REMOVE"]);
+    expect(result.matchedRows[0].newRows.map((row) => row.manufacturer_part_number)).toEqual(["KEEP", "ADD"]);
+  });
 });

@@ -4,8 +4,15 @@ import { downloadReport } from "../bom/exportReport";
 import { BOM_FIELDS, FIELD_LABELS } from "../bom/fields";
 import { loadPreferences, saveReportFilters } from "../bom/preferences";
 import { applyReportFilters } from "../bom/reportFilters";
-import type { BomField, BomRow, MappedBom, ReportFilters } from "../bom/types";
+import type { BomField, BomRow, ComparisonResult, FieldChange, MappedBom, ReportFilters } from "../bom/types";
 import { PrivacyNotice } from "./PrivacyNotice";
+
+const INLINE_EDIT_FIELDS: BomField[] = [
+  "internal_part_number",
+  "customer_part_number",
+  "quantity",
+  "reference_designators",
+];
 
 export function ReportStep({ original, next }: { original: MappedBom; next: MappedBom }) {
   const [filters, setFilters] = useState<ReportFilters>(() => loadPreferences().reportFilters);
@@ -115,6 +122,7 @@ export function ReportStep({ original, next }: { original: MappedBom; next: Mapp
       <button className="button primary" onClick={() => downloadReport(result, filters)}>
         Download Excel report
       </button>
+      <AnnotatedBomSection result={filtered} />
       <h3>Changed fields</h3>
       <div className="table-wrap">
         <table>
@@ -161,6 +169,192 @@ export function ReportStep({ original, next }: { original: MappedBom; next: Mapp
       )}
     </section>
   );
+}
+
+function AnnotatedBomSection({ result }: { result: ComparisonResult }) {
+  return (
+    <>
+      <h3>Original BOM With New BOM Edits</h3>
+      <div className="legend-row" aria-label="Color Key">
+        <span className="legend-title">Color Key</span>
+        <span>
+          <span className="inline-chip unchanged-chip">Neutral oval</span> unchanged manufacturer part
+        </span>
+        <span>
+          <span className="inline-chip added-chip">Green oval</span> manufacturer part added in new BOM
+        </span>
+        <span>
+          <span className="inline-chip removed-chip">Red oval</span> manufacturer part removed from original BOM
+        </span>
+        <span>
+          <del className="inline-removed">Red strikethrough</del> original value replaced by new value
+        </span>
+        <span>
+          <ins className="inline-added">Green highlight</ins> new replacement value
+        </span>
+      </div>
+      <div className="table-wrap compact">
+        <table className="annotated-bom-table" aria-label="Original BOM with new BOM edits">
+          <thead>
+            <tr>
+              <th>Original line</th>
+              <th>New line</th>
+              <th>Internal part number</th>
+              <th>Customer part number</th>
+              <th>Quantity</th>
+              <th>Reference designators</th>
+              <th>Manufacturer</th>
+              <th>MPN</th>
+            </tr>
+          </thead>
+          <tbody>
+            {result.matchedRows.length === 0 ? (
+              <tr>
+                <td colSpan={8}>No matched rows to annotate.</td>
+              </tr>
+            ) : (
+              result.matchedRows.slice(0, 100).map((line, index) => (
+                <tr key={`${line.matchValue}-${index}`}>
+                  <td>{line.original.line_item}</td>
+                  <td>{line.next.line_item}</td>
+                  {INLINE_EDIT_FIELDS.map((field) => (
+                    <td key={field}>
+                      <InlineFieldValue field={field} row={line.original} changes={line.changes} />
+                    </td>
+                  ))}
+                  <td className="manufacturer-pair-cell" colSpan={2}>
+                    {manufacturerDisplayRows(line).map((row, rowIndex) => (
+                      <div className="manufacturer-subrow" key={`${row.manufacturerPartNumber}-${rowIndex}`}>
+                        <div>
+                          {row.newManufacturerName ? (
+                            <>
+                              <del className="inline-removed">{row.manufacturerName || "(blank)"}</del>
+                              <ins className="inline-added">{row.newManufacturerName || "(blank)"}</ins>
+                            </>
+                          ) : (
+                            <ManufacturerChip status={row.status}>{row.manufacturerName}</ManufacturerChip>
+                          )}
+                        </div>
+                        <div>
+                          <ManufacturerChip status={row.status}>{row.manufacturerPartNumber}</ManufacturerChip>
+                        </div>
+                      </div>
+                    ))}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+      {result.matchedRows.length > 100 && (
+        <p className="muted">Showing first 100 matched rows. Download the Excel report for all rows.</p>
+      )}
+    </>
+  );
+}
+
+function InlineFieldValue({
+  field,
+  row,
+  changes,
+}: {
+  field: BomField;
+  row: BomRow;
+  changes: FieldChange[];
+}) {
+  const change = changes.find((candidate) => candidate.field === field);
+  if (!change) return <>{row[field]}</>;
+
+  return (
+    <>
+      <del className="inline-removed">{change.originalValue || "(blank)"}</del>
+      <ins className="inline-added">{change.newValue || "(blank)"}</ins>
+    </>
+  );
+}
+
+function ManufacturerChip({
+  status,
+  children,
+}: {
+  status: "added" | "removed" | "unchanged";
+  children: string;
+}) {
+  return <span className={`inline-chip ${status}-chip`}>{children || "(blank)"}</span>;
+}
+
+function manufacturerDisplayRows(line: ComparisonResult["matchedRows"][number]) {
+  const originalParts = partRowsByIdentity(line.originalRows);
+  const newParts = partRowsByIdentity(line.newRows);
+  const newPartsByMpn = partRowsByMpn(line.newRows);
+  const usedNewIdentities = new Set<string>();
+
+  const rows = [...originalParts.entries()].map(([identity, originalRow]) => {
+    const matchingNewRow = newParts.get(identity);
+    if (matchingNewRow) {
+      usedNewIdentities.add(identity);
+      return manufacturerDisplayRow("unchanged", originalRow);
+    }
+
+    const replacementByMpn = newPartsByMpn.get(normalizeText(originalRow.manufacturer_part_number));
+    if (replacementByMpn) {
+      usedNewIdentities.add(partIdentity(replacementByMpn));
+      return {
+        status: "unchanged" as const,
+        manufacturerName: originalRow.manufacturer_name,
+        newManufacturerName: replacementByMpn.manufacturer_name,
+        manufacturerPartNumber: originalRow.manufacturer_part_number,
+      };
+    }
+
+    return manufacturerDisplayRow("removed", originalRow);
+  });
+
+  for (const [identity, newRow] of newParts) {
+    if (!usedNewIdentities.has(identity)) {
+      rows.push(manufacturerDisplayRow("added", newRow));
+    }
+  }
+
+  return rows;
+}
+
+function manufacturerDisplayRow(status: "added" | "removed" | "unchanged", row: BomRow) {
+  return {
+    status,
+    manufacturerName: row.manufacturer_name,
+    newManufacturerName: "",
+    manufacturerPartNumber: row.manufacturer_part_number,
+  };
+}
+
+function partRowsByIdentity(rows: BomRow[]) {
+  const parts = new Map<string, BomRow>();
+  for (const row of rows) {
+    const identity = partIdentity(row);
+    if (identity) parts.set(identity, row);
+  }
+  return parts;
+}
+
+function partRowsByMpn(rows: BomRow[]) {
+  const parts = new Map<string, BomRow>();
+  for (const row of rows) {
+    const mpn = normalizeText(row.manufacturer_part_number);
+    if (mpn) parts.set(mpn, row);
+  }
+  return parts;
+}
+
+function partIdentity(row: BomRow) {
+  const mpn = normalizeText(row.manufacturer_part_number);
+  if (!mpn) return "";
+  return `${normalizeText(row.manufacturer_name)}|${mpn}`;
+}
+
+function normalizeText(value: string) {
+  return value.trim().toLowerCase();
 }
 
 function RowsSection({ title, rows, tone }: { title: string; rows: BomRow[]; tone?: "added" | "removed" }) {

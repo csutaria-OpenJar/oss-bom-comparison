@@ -107,7 +107,9 @@ export interface ComparisonResult {
     matchKey: MatchKey;
     matchValue: string;
     original: BomRow;
+    originalRows: BomRow[];
     next: BomRow;
+    newRows: BomRow[];
     changes: FieldChange[];
   }>;
 }
