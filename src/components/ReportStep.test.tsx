@@ -80,4 +80,29 @@ describe("ReportStep", () => {
     expect(within(annotatedTable).getByText("REMOVE")).toHaveClass("removed-chip");
     expect(within(annotatedTable).getByText("ADD")).toHaveClass("added-chip");
   });
+
+  it("renders every report row on screen without first-100 download guidance", () => {
+    const originalRows = Array.from({ length: 120 }, (_, index) => ({
+      ...baseRow,
+      line_item: `${index + 1}`,
+      internal_part_number: `ORIGINAL-IPN-${index + 1}`,
+      manufacturer_name: "Yageo",
+      manufacturer_part_number: `KEEP-${index + 1}`,
+    }));
+    const nextRows = Array.from({ length: 120 }, (_, index) => ({
+      ...baseRow,
+      line_item: `${index + 1}`,
+      internal_part_number: `NEW-IPN-${index + 1}`,
+      manufacturer_name: "Yageo",
+      manufacturer_part_number: `KEEP-${index + 1}`,
+    }));
+
+    render(<ReportStep original={mapped(originalRows)} next={mapped(nextRows)} />);
+
+    const annotatedTable = screen.getByRole("table", { name: "Original BOM with new BOM edits" });
+    expect(within(annotatedTable).getByText("ORIGINAL-IPN-101")).toBeInTheDocument();
+    expect(within(annotatedTable).getByText("NEW-IPN-120")).toBeInTheDocument();
+    expect(screen.queryByText(/Showing first 100/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Download the Excel report for all rows/i)).not.toBeInTheDocument();
+  });
 });

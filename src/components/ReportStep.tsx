@@ -213,7 +213,7 @@ function AnnotatedBomSection({ result }: { result: ComparisonResult }) {
                 <td colSpan={8}>No matched rows to annotate.</td>
               </tr>
             ) : (
-              result.matchedRows.slice(0, 100).map((line, index) => (
+              result.matchedRows.map((line, index) => (
                 <tr key={`${line.matchValue}-${index}`}>
                   <td>{line.original.line_item}</td>
                   <td>{line.next.line_item}</td>
@@ -247,9 +247,6 @@ function AnnotatedBomSection({ result }: { result: ComparisonResult }) {
           </tbody>
         </table>
       </div>
-      {result.matchedRows.length > 100 && (
-        <p className="muted">Showing first 100 matched rows. Download the Excel report for all rows.</p>
-      )}
     </>
   );
 }
@@ -381,7 +378,7 @@ function RowsSection({ title, rows, tone }: { title: string; rows: BomRow[]; ton
                 <td colSpan={8}>No rows in this section.</td>
               </tr>
             ) : (
-              rows.slice(0, 100).map((row, index) => (
+              rows.map((row, index) => (
                 <tr className={tone ? `row-${tone}` : ""} key={`${row.line_item}-${row.internal_part_number}-${index}`}>
                   <td>{row.line_item}</td>
                   <td>{row.internal_part_number}</td>
@@ -397,7 +394,6 @@ function RowsSection({ title, rows, tone }: { title: string; rows: BomRow[]; ton
           </tbody>
         </table>
       </div>
-      {rows.length > 100 && <p className="muted">Showing first 100 rows. Download the Excel report for all rows.</p>}
     </>
   );
 }

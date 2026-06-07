@@ -152,7 +152,7 @@ button:focus-visible,
 .wizard-steps {
   display: grid;
   gap: 8px;
-  grid-template-columns: repeat(7, minmax(110px, 1fr));
+  grid-template-columns: repeat(3, minmax(160px, 1fr));
   list-style: none;
   margin: 0 0 18px;
   overflow-x: auto;
@@ -168,7 +168,7 @@ button:focus-visible,
   display: block;
   font-size: 13px;
   font-weight: 750;
-  min-height: 40px;
+  min-height: 52px;
   padding: 9px 10px;
   text-align: center;
   white-space: nowrap;
@@ -178,6 +178,34 @@ button:focus-visible,
   background: var(--accent);
   border-color: var(--accent);
   color: #ffffff;
+}
+
+.wizard-step-progress {
+  display: grid;
+  gap: 5px;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
+  margin-top: 8px;
+}
+
+.wizard-step-progress span {
+  background: #e9ede8;
+  border: 0;
+  border-radius: 999px;
+  min-height: 5px;
+  padding: 0;
+}
+
+.wizard-step-progress .complete {
+  background: var(--accent-soft);
+}
+
+.wizard-steps .active .wizard-step-progress span {
+  background: rgb(255 255 255 / 35%);
+}
+
+.wizard-steps .active .wizard-step-progress .complete {
+  background: #ffffff;
 }
 
 .form-grid {
