@@ -11,6 +11,12 @@ const rows = [
 ];
 
 describe("workbook parsing", () => {
+  it("rejects invalid workbook bytes with clear guidance", () => {
+    const invalid = new TextEncoder().encode("not xlsx").buffer;
+
+    expect(() => parseWorkbook(invalid)).toThrow("Upload a valid .xlsx workbook.");
+  });
+
   it("extracts sheet names and preview rows", () => {
     const workbook = parseWorkbook(makeWorkbookBuffer(rows));
     expect(workbook.sheetNames).toEqual(["BOM"]);
