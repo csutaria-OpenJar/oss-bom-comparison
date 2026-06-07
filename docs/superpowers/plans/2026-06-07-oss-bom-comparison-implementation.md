@@ -87,7 +87,7 @@ Add `package.json`:
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "jsdom": "^25.0.1",
-    "vitest": "^2.1.8"
+    "vitest": "^3.2.6"
   }
 }
 ```
@@ -148,7 +148,7 @@ Add `vite.config.ts`:
 
 ```ts
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   base: "./",
