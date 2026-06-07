@@ -17,6 +17,12 @@ describe("workbook parsing", () => {
     expect(() => parseWorkbook(invalid)).toThrow("Upload a valid .xlsx workbook.");
   });
 
+  it("rejects zip-prefixed bytes that are not an xlsx workbook", () => {
+    const invalid = new TextEncoder().encode("PKnot a workbook").buffer;
+
+    expect(() => parseWorkbook(invalid)).toThrow("Upload a valid .xlsx workbook.");
+  });
+
   it("extracts sheet names and preview rows", () => {
     const workbook = parseWorkbook(makeWorkbookBuffer(rows));
     expect(workbook.sheetNames).toEqual(["BOM"]);

@@ -9,19 +9,25 @@ export interface ParsedWorkbook {
 
 export function parseWorkbook(data: ArrayBuffer): ParsedWorkbook {
   try {
-    if (!hasZipSignature(data)) {
-      throw new Error("not an xlsx zip archive");
+    const workbook = XLSX.read(data, { type: "array", cellDates: false, bookFiles: true });
+    if (!isXlsxWorkbook(workbook)) {
+      throw new Error("not an xlsx workbook");
     }
-    const workbook = XLSX.read(data, { type: "array", cellDates: false });
     return { workbook, sheetNames: workbook.SheetNames };
   } catch (error) {
     throw new Error("Upload a valid .xlsx workbook.");
   }
 }
 
-function hasZipSignature(data: ArrayBuffer): boolean {
-  const bytes = new Uint8Array(data, 0, Math.min(data.byteLength, 4));
-  return bytes[0] === 0x50 && bytes[1] === 0x4b;
+function isXlsxWorkbook(workbook: XLSX.WorkBook): boolean {
+  const files = (workbook as XLSX.WorkBook & { files?: Record<string, unknown> }).files;
+  return Boolean(
+    workbook.Workbook &&
+      workbook.Props &&
+      workbook.SheetNames.length > 0 &&
+      files &&
+      files["xl/workbook.xml"],
+  );
 }
 
 export function previewWorksheet(
