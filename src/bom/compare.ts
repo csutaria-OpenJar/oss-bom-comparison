@@ -102,7 +102,6 @@ export function compareBoms(originalRows: BomRow[], nextRows: BomRow[], matchKey
 function changedFieldsForRows(original: BomRow, next: BomRow, matchKey: MatchKey): FieldChange[] {
   return BOM_FIELDS
     .filter((field) => field !== matchKey)
-    .filter((field) => field !== "manufacturer_part_number")
     .filter((field) => compareValue(field, original[field]) !== compareValue(field, next[field]))
     .map((field) => ({
       matchKey,

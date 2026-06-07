@@ -26,8 +26,11 @@ describe("compareBoms", () => {
 
     const result = compareBoms(original, next, "line_item");
 
-    expect(result.summary.changedFields).toBe(1);
-    expect(result.changedFields[0].field).toBe("description");
+    expect(result.summary.changedFields).toBe(2);
+    expect(result.changedFields.map((change) => change.field)).toEqual([
+      "description",
+      "manufacturer_part_number",
+    ]);
     expect(result.summary.addedRows).toBe(1);
     expect(result.summary.removedRows).toBe(1);
     expect(result.summary.manufacturerPartAdds).toBe(1);
