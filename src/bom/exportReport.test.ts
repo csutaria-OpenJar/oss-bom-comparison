@@ -57,6 +57,11 @@ describe("exportReport", () => {
 
     expect(workbook.SheetNames).toContain("Summary");
     expect(workbook.SheetNames).toContain("Added Rows");
+    expect(workbook.SheetNames).toContain("Rows With Blank Keys");
+    const summary = XLSX.utils.sheet_to_json(workbook.Sheets.Summary, {
+      header: 1,
+    }) as unknown[][];
+    expect(summary[6][0]).toBe("Rows with blank keys");
     const addedRows = XLSX.utils.sheet_to_json(workbook.Sheets["Added Rows"], {
       header: 1,
     }) as unknown[][];

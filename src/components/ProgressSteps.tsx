@@ -10,12 +10,16 @@ const STEPS = [
 
 export function ProgressSteps({ current }: { current: number }) {
   return (
-    <nav className="wizard-steps" aria-label="Comparison workflow">
-      {STEPS.map((step, index) => (
-        <span className={index === current ? "active" : ""} key={step}>
-          {step}
-        </span>
-      ))}
+    <nav aria-label="Comparison workflow">
+      <ol className="wizard-steps">
+        {STEPS.map((step, index) => (
+          <li key={step}>
+            <span aria-current={index === current ? "step" : undefined} className={index === current ? "active" : ""}>
+              {step}
+            </span>
+          </li>
+        ))}
+      </ol>
     </nav>
   );
 }

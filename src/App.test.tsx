@@ -9,6 +9,7 @@ describe("App", () => {
 
     expect(screen.getByText(/Your BOM files stay in this browser/i)).toBeInTheDocument();
     expect(screen.getByText(/\.xlsx only\. CSV, PDF, and \.xls are not supported\./i)).toBeInTheDocument();
+    expect(screen.getByText("Original upload")).toHaveAttribute("aria-current", "step");
   });
 
   it("rejects unsupported files before parsing", async () => {

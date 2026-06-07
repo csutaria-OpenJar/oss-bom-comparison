@@ -10,16 +10,11 @@ interface StoredPreferences {
 }
 
 export function loadPreferences(): StoredPreferences {
-  const fallback: StoredPreferences = {
-    headerMappings: {},
-    preferredMatchKey: "line_item",
-    reportFilters: DEFAULT_REPORT_FILTERS,
-  };
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) {
-    return fallback;
-  }
   try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      return fallbackPreferences();
+    }
     const parsed = JSON.parse(raw) as Partial<StoredPreferences>;
     return {
       headerMappings: sanitizeHeaderMappings(parsed.headerMappings),
@@ -27,7 +22,7 @@ export function loadPreferences(): StoredPreferences {
       reportFilters: sanitizeReportFilters(parsed.reportFilters),
     };
   } catch {
-    return fallback;
+    return fallbackPreferences();
   }
 }
 
@@ -35,7 +30,7 @@ export function saveMappingPreference(headers: string[], mapping: ColumnMapping,
   const current = loadPreferences();
   current.headerMappings[headerSignature(headers)] = sanitizeMapping(mapping);
   current.preferredMatchKey = sanitizeMatchKey(matchKey);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+  savePreferences(current);
 }
 
 export function loadMappingPreference(headers: string[]): ColumnMapping {
@@ -45,7 +40,23 @@ export function loadMappingPreference(headers: string[]): ColumnMapping {
 export function saveReportFilters(reportFilters: ReportFilters): void {
   const current = loadPreferences();
   current.reportFilters = sanitizeReportFilters(reportFilters);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+  savePreferences(current);
+}
+
+function fallbackPreferences(): StoredPreferences {
+  return {
+    headerMappings: {},
+    preferredMatchKey: "line_item",
+    reportFilters: DEFAULT_REPORT_FILTERS,
+  };
+}
+
+function savePreferences(preferences: StoredPreferences): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
+  } catch {
+    // Preferences are a convenience only; blocked storage must not stop the browser-only workflow.
+  }
 }
 
 function headerSignature(headers: string[]): string {

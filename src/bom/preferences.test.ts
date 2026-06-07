@@ -1,9 +1,10 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_REPORT_FILTERS } from "./fields";
 import { loadPreferences, saveMappingPreference, saveReportFilters } from "./preferences";
 
 describe("preferences", () => {
   beforeEach(() => localStorage.clear());
+  afterEach(() => vi.restoreAllMocks());
 
   it("stores mapping and filter preferences without BOM rows", () => {
     saveMappingPreference(["Item", "Internal PN"], { line_item: 0, internal_part_number: 1 }, "line_item");
@@ -72,5 +73,28 @@ describe("preferences", () => {
     expect(loadPreferences().headerMappings).toEqual({
       "headers:19lnv20": { manufacturer_part_number: 1 },
     });
+  });
+
+  it("falls back when browser storage is unavailable", () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("storage blocked");
+    });
+
+    expect(loadPreferences()).toEqual({
+      headerMappings: {},
+      preferredMatchKey: "line_item",
+      reportFilters: DEFAULT_REPORT_FILTERS,
+    });
+  });
+
+  it("does not block the workflow when saving preferences fails", () => {
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("quota exceeded");
+    });
+
+    expect(() =>
+      saveMappingPreference(["Item"], { line_item: 0 }, "line_item"),
+    ).not.toThrow();
+    expect(() => saveReportFilters({ ...DEFAULT_REPORT_FILTERS, addedRows: false })).not.toThrow();
   });
 });

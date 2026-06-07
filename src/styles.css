@@ -153,9 +153,11 @@ button:focus-visible,
   display: grid;
   gap: 8px;
   grid-template-columns: repeat(7, minmax(110px, 1fr));
+  list-style: none;
   margin: 0 0 18px;
   overflow-x: auto;
   padding-bottom: 4px;
+  padding-left: 0;
 }
 
 .wizard-steps span {

@@ -8,14 +8,15 @@ import { extractMappedRows, parseWorkbook, previewWorksheet } from "../bom/workb
 interface MappingStepProps {
   label: "Original" | "New";
   workbook: UploadedWorkbook;
+  requiredMatchKey?: MatchKey;
   onMapped: (mapped: MappedBom) => void;
 }
 
-export function MappingStep({ label, workbook, onMapped }: MappingStepProps) {
+export function MappingStep({ label, workbook, requiredMatchKey, onMapped }: MappingStepProps) {
   const parsed = useMemo(() => parseWorkbook(workbook.data), [workbook.data]);
   const [sheetName, setSheetName] = useState(workbook.sheetNames[0] ?? "");
   const [headerRow, setHeaderRow] = useState(1);
-  const [matchKey, setMatchKey] = useState<MatchKey>(() => loadPreferences().preferredMatchKey);
+  const [matchKey, setMatchKey] = useState<MatchKey>(() => requiredMatchKey ?? loadPreferences().preferredMatchKey);
   const [columnFields, setColumnFields] = useState<Array<BomField | "">>([]);
   const preview = useMemo(() => {
     try {
@@ -75,6 +76,11 @@ export function MappingStep({ label, workbook, onMapped }: MappingStepProps) {
         Choose the worksheet, header row, mapped fields, and comparison key. Ignore columns you do not want in the
         comparison report.
       </p>
+      {requiredMatchKey && (
+        <p className="notice">
+          The new BOM uses the same comparison key selected for the original BOM: {FIELD_LABELS[requiredMatchKey]}.
+        </p>
+      )}
       <div className="form-grid">
         <label>
           Worksheet
@@ -95,7 +101,11 @@ export function MappingStep({ label, workbook, onMapped }: MappingStepProps) {
         </label>
         <label>
           Match key
-          <select value={matchKey} onChange={(event) => setMatchKey(event.target.value as MatchKey)}>
+          <select
+            disabled={Boolean(requiredMatchKey)}
+            value={matchKey}
+            onChange={(event) => setMatchKey(event.target.value as MatchKey)}
+          >
             {MATCH_KEYS.map((field) => (
               <option key={field} value={field}>
                 {FIELD_LABELS[field]}

@@ -16,7 +16,7 @@ export function buildReportWorkbook(result: ComparisonResult, filters: ReportFil
     ["Changed fields", filtered.summary.changedFields],
     ["Manufacturer part adds", filtered.summary.manufacturerPartAdds],
     ["Manufacturer part removes", filtered.summary.manufacturerPartRemoves],
-    ["Unmatched or blank key rows", filtered.summary.unmatchedOrBlankRows],
+    ["Rows with blank keys", filtered.summary.unmatchedOrBlankRows],
     ["Active filters", JSON.stringify(filters)],
   ]);
 
@@ -41,7 +41,7 @@ export function buildReportWorkbook(result: ComparisonResult, filters: ReportFil
     appendSheet(workbook, "Manufacturer Part Removes", partRows(filtered.manufacturerPartRemoves));
   }
   if (filters.unmatchedOrBlankRows) {
-    appendSheet(workbook, "Unmatched Or Blank Key Rows", bomRows(filtered.unmatchedOrBlankRows));
+    appendSheet(workbook, "Rows With Blank Keys", bomRows(filtered.unmatchedOrBlankRows));
   }
 
   return XLSX.write(workbook, { type: "array", bookType: "xlsx" }) as ArrayBuffer;

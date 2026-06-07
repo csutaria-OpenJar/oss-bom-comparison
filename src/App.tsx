@@ -65,10 +65,11 @@ export default function App() {
           }}
         />
       )}
-      {step === 4 && newWorkbook && (
+      {step === 4 && newWorkbook && originalBom && (
         <MappingStep
           label="New"
           workbook={newWorkbook}
+          requiredMatchKey={originalBom.matchKey}
           onMapped={(mapped) => {
             setNewBom(mapped);
             setStep(5);

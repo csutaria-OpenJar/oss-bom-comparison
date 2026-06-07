@@ -40,8 +40,8 @@ export function ReportStep({ original, next }: { original: MappedBom; next: Mapp
     <section className="section">
       <h2>Comparison report</h2>
       <p className="muted">
-        The report uses the new BOM's match key: <strong>{FIELD_LABELS[next.matchKey]}</strong>. Use the filters to hide
-        noisy changes from the report you are viewing and downloading.
+        The report uses the shared comparison key: <strong>{FIELD_LABELS[next.matchKey]}</strong>. Use the filters to
+        hide noisy changes from the report you are viewing and downloading.
       </p>
       <PrivacyNotice variant="report" />
       <div className="metric-row">
@@ -93,7 +93,7 @@ export function ReportStep({ original, next }: { original: MappedBom; next: Mapp
               checked={filters.unmatchedOrBlankRows}
               onChange={(event) => updateSectionFilter("unmatchedOrBlankRows", event.target.checked)}
             />
-            Blank or unmatched keys
+            Blank comparison keys
           </label>
         </fieldset>
         <fieldset>
@@ -157,7 +157,7 @@ export function ReportStep({ original, next }: { original: MappedBom; next: Mapp
         <PartSection title="Manufacturer part removes" rows={filtered.manufacturerPartRemoves} tone="removed" />
       )}
       {filters.unmatchedOrBlankRows && (
-        <RowsSection title="Blank or unmatched match keys" rows={filtered.unmatchedOrBlankRows} />
+        <RowsSection title="Rows with blank comparison keys" rows={filtered.unmatchedOrBlankRows} />
       )}
     </section>
   );
