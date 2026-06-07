@@ -24,4 +24,26 @@ describe("validateWorkbookFile", () => {
       message: ".xlsx only. CSV, PDF, and .xls are not supported.",
     });
   });
+
+  it("rejects files with unsupported browser-provided types even when the extension is xlsx", () => {
+    expect(validateWorkbookFile(file("bom.xlsx", "text/csv"))).toEqual({
+      ok: false,
+      message: ".xlsx only. CSV, PDF, and .xls are not supported.",
+    });
+    expect(validateWorkbookFile(file("bom.xlsx", "application/pdf"))).toEqual({
+      ok: false,
+      message: ".xlsx only. CSV, PDF, and .xls are not supported.",
+    });
+    expect(validateWorkbookFile(file("bom.xlsx", "application/vnd.ms-excel"))).toEqual({
+      ok: false,
+      message: ".xlsx only. CSV, PDF, and .xls are not supported.",
+    });
+  });
+
+  it("allows empty or unknown browser-provided types for xlsx filenames", () => {
+    expect(validateWorkbookFile(file("bom.xlsx", ""))).toEqual({ ok: true });
+    expect(validateWorkbookFile(file("bom.xlsx", "application/octet-stream"))).toEqual({
+      ok: true,
+    });
+  });
 });
