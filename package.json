@@ -1,7 +1,10 @@
 {
   "name": "oss-bom-comparison",
   "version": "0.1.0",
+  "description": "Browser-only Excel BOM comparison app",
   "private": false,
+  "author": "Chintan Sutaria",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
