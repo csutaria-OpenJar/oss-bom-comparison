@@ -10,6 +10,8 @@ import type {
   MatchKeyValidation,
 } from "./types";
 
+const QUANTITY_UNITS = new Set(["pc", "pcs", "ea", "each", "unit", "units"]);
+
 export function validateMatchKeys(rows: BomRow[], matchKey: MatchKey): MatchKeyValidation {
   const occurrences = new Map<string, number[]>();
   const displayValues = new Map<string, string>();
@@ -162,6 +164,9 @@ function partChange(row: BomRow, matchKey: MatchKey, matchValue: string): Manufa
 }
 
 function compareValue(field: BomField, value: string): string {
+  if (field === "quantity") {
+    return normalizeQuantity(value) ?? normalizeText(value);
+  }
   if (field === "reference_designators") {
     return value
       .split(",")
@@ -170,6 +175,20 @@ function compareValue(field: BomField, value: string): string {
       .join(",");
   }
   return normalizeText(value);
+}
+
+function normalizeQuantity(value: string): string | undefined {
+  const normalized = value.trim().toLowerCase();
+  const match = normalized.match(/^([+-]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)(?:\s*([a-z]+))?$/);
+  if (!match) return undefined;
+
+  const unit = match[2];
+  if (unit && !QUANTITY_UNITS.has(unit)) return undefined;
+
+  const numeric = Number(match[1].replace(/,/g, ""));
+  if (!Number.isFinite(numeric)) return undefined;
+
+  return String(numeric);
 }
 
 function normalizeKey(value: string): string {
