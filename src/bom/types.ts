@@ -49,7 +49,7 @@ export interface WorksheetPreview {
 
 export interface UploadedWorkbook {
   fileName: string;
-  data: ArrayBuffer;
+  workbook: import("./workbook").ParsedWorkbook;
   sheetNames: string[];
 }
 

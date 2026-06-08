@@ -4,7 +4,7 @@ import { matchKeyDiagnosticMessages } from "../bom/diagnostics";
 import { fieldsByColumn, suggestMapping, validateMapping } from "../bom/mapping";
 import { loadMappingPreference, loadPreferences, saveMappingPreference } from "../bom/preferences";
 import type { BomField, MappedBom, MatchKey, UploadedWorkbook } from "../bom/types";
-import { extractMappedRows, parseWorkbook, previewWorksheet, worksheetStats } from "../bom/workbook";
+import { extractMappedRows, previewWorksheet, worksheetStats } from "../bom/workbook";
 
 const INITIAL_PREVIEW_ROWS = 8;
 const PREVIEW_ROW_INCREMENT = 16;
@@ -18,7 +18,7 @@ interface MappingStepProps {
 }
 
 export function MappingStep({ label, workbook, requiredMatchKey, onBack, onMapped }: MappingStepProps) {
-  const parsed = useMemo(() => parseWorkbook(workbook.data), [workbook.data]);
+  const parsed = workbook.workbook;
   const [sheetName, setSheetName] = useState(workbook.sheetNames[0] ?? "");
   const [headerRow, setHeaderRow] = useState(1);
   const [matchKey, setMatchKey] = useState<MatchKey>(() => requiredMatchKey ?? loadPreferences().preferredMatchKey);

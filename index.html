@@ -2,20 +2,15 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; connect-src 'none'; img-src 'self' data:; style-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BOM Comparison</title>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <!-- Start of HubSpot Embed Code -->
-    <script
-      type="text/javascript"
-      id="hs-script-loader"
-      async
-      defer
-      src="//js-na2.hs-scripts.com/242395514.js"
-    ></script>
-    <!-- End of HubSpot Embed Code -->
   </body>
 </html>

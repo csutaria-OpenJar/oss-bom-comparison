@@ -1,15 +1,15 @@
-import * as XLSX from "xlsx";
+import writeXlsxFile, { type SheetData } from "write-excel-file/browser";
 import { FIELD_LABELS } from "./fields";
 import { applyReportFilters } from "./reportFilters";
 import type { BomRow, ComparisonResult, ReportFilters } from "./types";
 
 const FORMULA_PREFIXES = ["=", "+", "-", "@"];
 
-export function buildReportWorkbook(result: ComparisonResult, filters: ReportFilters): ArrayBuffer {
+export async function buildReportWorkbook(result: ComparisonResult, filters: ReportFilters): Promise<Blob> {
   const filtered = applyReportFilters(result, filters);
-  const workbook = XLSX.utils.book_new();
+  const sheets: Array<{ sheet: string; data: SheetData }> = [];
 
-  appendSheet(workbook, "Summary", [
+  appendSheet(sheets, "Summary", [
     ["Metric", "Value"],
     ["Added rows", filtered.summary.addedRows],
     ["Removed rows", filtered.summary.removedRows],
@@ -20,10 +20,10 @@ export function buildReportWorkbook(result: ComparisonResult, filters: ReportFil
     ["Active filters", JSON.stringify(filters)],
   ]);
 
-  if (filters.addedRows) appendSheet(workbook, "Added Rows", bomRows(filtered.addedRows));
-  if (filters.removedRows) appendSheet(workbook, "Removed Rows", bomRows(filtered.removedRows));
+  if (filters.addedRows) appendSheet(sheets, "Added Rows", bomRows(filtered.addedRows));
+  if (filters.removedRows) appendSheet(sheets, "Removed Rows", bomRows(filtered.removedRows));
   if (filtered.changedFields.length > 0) {
-    appendSheet(workbook, "Changed Fields", [
+    appendSheet(sheets, "Changed Fields", [
       ["Match key", "Match value", "Field", "Original value", "New value"],
       ...filtered.changedFields.map((change) => [
         change.matchKey,
@@ -35,16 +35,16 @@ export function buildReportWorkbook(result: ComparisonResult, filters: ReportFil
     ]);
   }
   if (filters.manufacturerPartAdds) {
-    appendSheet(workbook, "Manufacturer Part Adds", partRows(filtered.manufacturerPartAdds));
+    appendSheet(sheets, "Manufacturer Part Adds", partRows(filtered.manufacturerPartAdds));
   }
   if (filters.manufacturerPartRemoves) {
-    appendSheet(workbook, "Manufacturer Part Removes", partRows(filtered.manufacturerPartRemoves));
+    appendSheet(sheets, "Manufacturer Part Removes", partRows(filtered.manufacturerPartRemoves));
   }
   if (filters.unmatchedOrBlankRows) {
-    appendSheet(workbook, "Rows With Blank Keys", bomRows(filtered.unmatchedOrBlankRows));
+    appendSheet(sheets, "Rows With Blank Keys", bomRows(filtered.unmatchedOrBlankRows));
   }
 
-  return XLSX.write(workbook, { type: "array", bookType: "xlsx" }) as ArrayBuffer;
+  return writeXlsxFile(sheets).toBlob();
 }
 
 export function downloadReport(
@@ -52,16 +52,14 @@ export function downloadReport(
   filters: ReportFilters,
   filename = "bom-comparison-report.xlsx",
 ): void {
-  const bytes = buildReportWorkbook(result, filters);
-  const blob = new Blob([bytes], {
-    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  void buildReportWorkbook(result, filters).then((blob) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
   });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
 }
 
 export function excelSafeValue(value: unknown): unknown {
@@ -71,9 +69,25 @@ export function excelSafeValue(value: unknown): unknown {
   return FORMULA_PREFIXES.some((prefix) => value.startsWith(prefix)) ? `'${value}` : value;
 }
 
-function appendSheet(workbook: XLSX.WorkBook, name: string, rows: unknown[][]): void {
-  const safeRows = rows.map((row) => row.map(excelSafeValue));
-  XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(safeRows), name);
+function appendSheet(sheets: Array<{ sheet: string; data: SheetData }>, name: string, rows: unknown[][]): void {
+  sheets.push({ sheet: name, data: toSheetData(rows) });
+}
+
+function toSheetData(rows: unknown[][]): SheetData {
+  return rows.map((row) =>
+    row.map((value) => {
+      const safeValue = excelSafeValue(value);
+      if (
+        typeof safeValue === "string" ||
+        typeof safeValue === "number" ||
+        typeof safeValue === "boolean" ||
+        safeValue instanceof Date
+      ) {
+        return safeValue;
+      }
+      return safeValue == null ? null : String(safeValue);
+    }),
+  );
 }
 
 function bomRows(rows: BomRow[]): unknown[][] {

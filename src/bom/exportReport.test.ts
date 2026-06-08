@@ -1,8 +1,9 @@
-import * as XLSX from "xlsx";
+import { readSheet } from "read-excel-file/browser";
 import { describe, expect, it } from "vitest";
 import { DEFAULT_REPORT_FILTERS } from "./fields";
 import { buildReportWorkbook, excelSafeValue } from "./exportReport";
 import type { ComparisonResult } from "./types";
+import { blobToArrayBuffer } from "../test/testWorkbook";
 
 describe("exportReport", () => {
   it("escapes formula-like strings", () => {
@@ -14,7 +15,7 @@ describe("exportReport", () => {
     expect(excelSafeValue("@SUM(1,2)")).toBe("'@SUM(1,2)");
   });
 
-  it("builds an xlsx workbook with visible filtered sections", () => {
+  it("builds an xlsx workbook with visible filtered sections", async () => {
     const result: ComparisonResult = {
       summary: {
         addedRows: 1,
@@ -52,19 +53,11 @@ describe("exportReport", () => {
       matchedRows: [],
     };
 
-    const bytes = buildReportWorkbook(result, DEFAULT_REPORT_FILTERS);
-    const workbook = XLSX.read(bytes, { type: "array" });
-
-    expect(workbook.SheetNames).toContain("Summary");
-    expect(workbook.SheetNames).toContain("Added Rows");
-    expect(workbook.SheetNames).toContain("Rows With Blank Keys");
-    const summary = XLSX.utils.sheet_to_json(workbook.Sheets.Summary, {
-      header: 1,
-    }) as unknown[][];
+    const blob = await buildReportWorkbook(result, DEFAULT_REPORT_FILTERS);
+    const bytes = await blobToArrayBuffer(blob);
+    const summary = await readSheet(bytes, "Summary");
     expect(summary[6][0]).toBe("Rows with blank keys");
-    const addedRows = XLSX.utils.sheet_to_json(workbook.Sheets["Added Rows"], {
-      header: 1,
-    }) as unknown[][];
+    const addedRows = await readSheet(bytes, "Added Rows");
     expect(addedRows[1][1]).toBe("'=PN");
   });
 });

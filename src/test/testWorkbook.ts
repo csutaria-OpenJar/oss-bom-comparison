@@ -1,8 +1,27 @@
-import * as XLSX from "xlsx";
+import writeXlsxFile, { type SheetData } from "write-excel-file/browser";
 
-export function makeWorkbookBuffer(rows: unknown[][], sheetName = "BOM"): ArrayBuffer {
-  const workbook = XLSX.utils.book_new();
-  const sheet = XLSX.utils.aoa_to_sheet(rows);
-  XLSX.utils.book_append_sheet(workbook, sheet, sheetName);
-  return XLSX.write(workbook, { type: "array", bookType: "xlsx" }) as ArrayBuffer;
+export async function makeWorkbookBuffer(rows: unknown[][], sheetName = "BOM"): Promise<ArrayBuffer> {
+  const blob = await writeXlsxFile([{ sheet: sheetName, data: toSheetData(rows) }]).toBlob();
+  return blobToArrayBuffer(blob);
+}
+
+function toSheetData(rows: unknown[][]): SheetData {
+  return rows.map((row) =>
+    row.map((value) =>
+      typeof value === "string" || typeof value === "number" || typeof value === "boolean" || value instanceof Date
+        ? value
+        : value == null
+          ? null
+          : String(value),
+    ),
+  );
+}
+
+export function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as ArrayBuffer);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsArrayBuffer(blob);
+  });
 }

@@ -29,8 +29,8 @@ export function UploadStep({ label, onUploaded, onUseSampleBoms }: UploadStepPro
 
     try {
       const data = await file.arrayBuffer();
-      const parsed = parseWorkbook(data);
-      onUploaded({ fileName: file.name, data, sheetNames: parsed.sheetNames });
+      const parsed = await parseWorkbook(data);
+      onUploaded({ fileName: file.name, workbook: parsed, sheetNames: parsed.sheetNames });
     } catch (error) {
       window.dispatchEvent(
         new CustomEvent("app-error", {

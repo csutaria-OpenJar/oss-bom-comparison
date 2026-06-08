@@ -2,18 +2,17 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { makeWorkbookBuffer } from "../test/testWorkbook";
+import { parseWorkbook } from "../bom/workbook";
 import { MappingStep } from "./MappingStep";
 
 describe("MappingStep", () => {
-  it("locks the new BOM to the original BOM comparison key", () => {
+  it("locks the new BOM to the original BOM comparison key", async () => {
+    const workbook = await uploadedWorkbook("new.xlsx", [["Line", "MPN"], ["10", "ABC-123"]]);
+
     render(
       <MappingStep
         label="New"
-        workbook={{
-          fileName: "new.xlsx",
-          data: makeWorkbookBuffer([["Line", "MPN"], ["10", "ABC-123"]]),
-          sheetNames: ["BOM"],
-        }}
+        workbook={workbook}
         requiredMatchKey="manufacturer_part_number"
         onBack={vi.fn()}
         onMapped={vi.fn()}
@@ -28,15 +27,12 @@ describe("MappingStep", () => {
   it("lets users go back from the table mapping controls", async () => {
     const user = userEvent.setup();
     const onBack = vi.fn();
+    const workbook = await uploadedWorkbook("original.xlsx", [["Line", "MPN"], ["10", "ABC-123"]]);
 
     render(
       <MappingStep
         label="Original"
-        workbook={{
-          fileName: "original.xlsx",
-          data: makeWorkbookBuffer([["Line", "MPN"], ["10", "ABC-123"]]),
-          sheetNames: ["BOM"],
-        }}
+        workbook={workbook}
         onBack={onBack}
         onMapped={vi.fn()}
       />,
@@ -56,20 +52,17 @@ describe("MappingStep", () => {
 
   it("shows workbook context and keeps match-key quality diagnostics collapsed by default", async () => {
     const user = userEvent.setup();
+    const workbook = await uploadedWorkbook("original.xlsx", [
+      ["Line", "MPN", "Qty"],
+      ["", "BLANK-KEY", "1"],
+      ["10", "ABC-123", "2"],
+      ["10", "DEF-456", "3"],
+    ]);
 
     render(
       <MappingStep
         label="Original"
-        workbook={{
-          fileName: "original.xlsx",
-          data: makeWorkbookBuffer([
-            ["Line", "MPN", "Qty"],
-            ["", "BLANK-KEY", "1"],
-            ["10", "ABC-123", "2"],
-            ["10", "DEF-456", "3"],
-          ]),
-          sheetNames: ["BOM"],
-        }}
+        workbook={workbook}
         onBack={vi.fn()}
         onMapped={vi.fn()}
       />,
@@ -95,15 +88,12 @@ describe("MappingStep", () => {
       ["Line", "MPN", "Unmapped note"],
       ...Array.from({ length: 16 }, (_, index) => [`${index + 1}`, `MPN-${index + 1}`, `note-${index + 1}`]),
     ];
+    const workbook = await uploadedWorkbook("original.xlsx", rows);
 
     render(
       <MappingStep
         label="Original"
-        workbook={{
-          fileName: "original.xlsx",
-          data: makeWorkbookBuffer(rows),
-          sheetNames: ["BOM"],
-        }}
+        workbook={workbook}
         onBack={vi.fn()}
         onMapped={vi.fn()}
       />,
@@ -118,3 +108,8 @@ describe("MappingStep", () => {
     expect(screen.getByText("MPN-16")).toBeInTheDocument();
   });
 });
+
+async function uploadedWorkbook(fileName: string, rows: unknown[][]) {
+  const workbook = await parseWorkbook(await makeWorkbookBuffer(rows));
+  return { fileName, workbook, sheetNames: workbook.sheetNames };
+}

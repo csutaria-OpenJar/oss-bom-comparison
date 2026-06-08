@@ -1,33 +1,35 @@
-import * as XLSX from "xlsx";
+import readXlsxFile, { type SheetData } from "read-excel-file/browser";
 import type { BomRow, ColumnMapping, PreviewColumn, PreviewRow, WorksheetPreview } from "./types";
 import { BOM_FIELDS } from "./fields";
 
+export const MAX_WORKBOOK_ROWS = 3000;
+export const MAX_WORKBOOK_CELLS = 200000;
+export const WORKBOOK_SIZE_LIMIT_MESSAGE =
+  "Workbook is too large. Upload a workbook with 3000 rows or fewer and 200000 cells or fewer.";
+
 export interface ParsedWorkbook {
-  workbook: XLSX.WorkBook;
+  sheets: Record<string, unknown[][]>;
   sheetNames: string[];
 }
 
-export function parseWorkbook(data: ArrayBuffer): ParsedWorkbook {
+export async function parseWorkbook(data: ArrayBuffer): Promise<ParsedWorkbook> {
   try {
-    const workbook = XLSX.read(data, { type: "array", cellDates: false, bookFiles: true });
-    if (!isXlsxWorkbook(workbook)) {
-      throw new Error("not an xlsx workbook");
+    const sheets = await readXlsxFile(data);
+    if (sheets.length === 0) {
+      throw new Error("empty workbook");
     }
-    return { workbook, sheetNames: workbook.SheetNames };
+    const parsed: ParsedWorkbook = {
+      sheets: Object.fromEntries(sheets.map((sheet) => [sheet.sheet, normalizeSheetData(sheet.data)])),
+      sheetNames: sheets.map((sheet) => sheet.sheet),
+    };
+    enforceWorkbookLimits(parsed);
+    return parsed;
   } catch (error) {
+    if (error instanceof Error && error.message === WORKBOOK_SIZE_LIMIT_MESSAGE) {
+      throw error;
+    }
     throw new Error("Upload a valid .xlsx workbook.");
   }
-}
-
-function isXlsxWorkbook(workbook: XLSX.WorkBook): boolean {
-  const files = (workbook as XLSX.WorkBook & { files?: Record<string, unknown> }).files;
-  return Boolean(
-    workbook.Workbook &&
-      workbook.Props &&
-      workbook.SheetNames.length > 0 &&
-      files &&
-      files["xl/workbook.xml"],
-  );
 }
 
 export function previewWorksheet(
@@ -108,11 +110,27 @@ export function worksheetStats(parsed: ParsedWorkbook, sheetName: string, header
 }
 
 function worksheetRows(parsed: ParsedWorkbook, sheetName: string): unknown[][] {
-  const sheet = parsed.workbook.Sheets[sheetName];
+  const sheet = parsed.sheets[sheetName];
   if (!sheet) {
     throw new Error(`Worksheet "${sheetName}" was not found.`);
   }
-  return XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, blankrows: true, defval: "" });
+  return sheet;
+}
+
+function normalizeSheetData(data: SheetData): unknown[][] {
+  return data.map((row) => row.map((cell) => cell ?? ""));
+}
+
+function enforceWorkbookLimits(parsed: ParsedWorkbook): void {
+  const rows = Object.values(parsed.sheets).reduce((total, sheet) => total + sheet.length, 0);
+  const cells = Object.values(parsed.sheets).reduce(
+    (total, sheet) => total + sheet.reduce((sheetTotal, row) => sheetTotal + row.length, 0),
+    0,
+  );
+
+  if (rows > MAX_WORKBOOK_ROWS || cells > MAX_WORKBOOK_CELLS) {
+    throw new Error(WORKBOOK_SIZE_LIMIT_MESSAGE);
+  }
 }
 
 function valuesForWidth(row: unknown[], width: number): string[] {
