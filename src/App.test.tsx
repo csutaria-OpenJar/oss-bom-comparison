@@ -50,12 +50,44 @@ describe("App", () => {
     await user.upload(input, file);
 
     expect(screen.getByText(/Selected file: original-bom\.xlsx/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /next step/i })).toBeInTheDocument();
+    expect(screen.getByText(/Workbook is ready/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /next step: map original BOM/i })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /map original BOM columns/i })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /next step/i }));
+    await user.click(screen.getByRole("button", { name: /next step: map original BOM/i }));
 
     expect(screen.getByRole("heading", { name: /map original BOM columns/i })).toBeInTheDocument();
+  });
+
+  it("completes the full comparison workflow with uploaded workbooks", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    const originalWorkbook = await makeWorkbookBuffer([
+      ["Line", "MPN", "Qty"],
+      ["10", "ABC-123", "2"],
+    ]);
+    const newWorkbook = await makeWorkbookBuffer([
+      ["Line", "MPN", "Qty"],
+      ["10", "ABC-123", "4"],
+      ["20", "XYZ-789", "1"],
+    ]);
+
+    await uploadWorkbook(user, /Original BOM workbook/i, "original-bom.xlsx", originalWorkbook);
+    await user.click(screen.getByRole("button", { name: /next step: map original BOM/i }));
+    await user.click(screen.getByRole("button", { name: /preview original BOM/i }));
+    await user.click(screen.getByRole("button", { name: /confirm original BOM/i }));
+
+    expect(screen.getByRole("heading", { name: /upload new BOM/i })).toBeInTheDocument();
+
+    await uploadWorkbook(user, /New BOM workbook/i, "new-bom.xlsx", newWorkbook);
+    await user.click(screen.getByRole("button", { name: /next step: map new BOM/i }));
+    await user.click(screen.getByRole("button", { name: /preview new BOM/i }));
+    await user.click(screen.getByRole("button", { name: /confirm new BOM/i }));
+
+    expect(screen.getByRole("heading", { name: /comparison report/i })).toBeInTheDocument();
+    expect(screen.getByText(/1 added rows, 0 removed rows, 1 field changes/i)).toBeInTheDocument();
+    expect(screen.getByText("XYZ-789")).toBeInTheDocument();
   });
 
   it("loads sample BOMs from the original upload step", async () => {
@@ -113,3 +145,19 @@ describe("App", () => {
     expect(styles).toMatch(/\.app-shell\s*{[^}]*flex:\s*1(?:\s+0\s+auto)?;/s);
   });
 });
+
+async function uploadWorkbook(
+  user: ReturnType<typeof userEvent.setup>,
+  label: RegExp,
+  fileName: string,
+  workbook: ArrayBuffer,
+) {
+  const file = new File([workbook], fileName, {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  Object.defineProperty(file, "arrayBuffer", {
+    value: () => Promise.resolve(workbook),
+  });
+
+  await user.upload(screen.getByLabelText(label), file);
+}

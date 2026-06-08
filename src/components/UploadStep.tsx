@@ -77,6 +77,11 @@ export function UploadStep({ label, onUploaded, onUseSampleBoms }: UploadStepPro
           onChange={(event) => void handleFile(event.target.files?.[0])}
         />
       </label>
+      {uploadedWorkbook && !isParsing && (
+        <p className="success-state" role="status">
+          Workbook is ready. Continue to mapping.
+        </p>
+      )}
       <div className="step-actions" role="group" aria-label={`Upload ${label.toLowerCase()} BOM actions`}>
         <button
           className="button primary"
@@ -88,7 +93,7 @@ export function UploadStep({ label, onUploaded, onUseSampleBoms }: UploadStepPro
             }
           }}
         >
-          {isParsing ? "Parsing workbook..." : "Next step"}
+          {isParsing ? "Parsing workbook..." : `Next step: map ${label.toLowerCase()} BOM`}
         </button>
       </div>
       {onUseSampleBoms && (

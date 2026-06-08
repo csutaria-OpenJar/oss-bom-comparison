@@ -9,6 +9,7 @@ describe("security posture", () => {
     expect(html).toContain("Content-Security-Policy");
     expect(html).toContain("default-src 'self'");
     expect(html).toContain("script-src 'self'");
+    expect(html).toContain("worker-src 'self' blob:");
     expect(html).toContain("connect-src 'none'");
     expect(html).not.toMatch(/hubspot|hs-script-loader|js-na2\.hs-scripts\.com/i);
   });
