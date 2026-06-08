@@ -7,6 +7,9 @@ describe("App", () => {
   it("starts with browser-only privacy and xlsx-only upload guidance", () => {
     render(<App />);
 
+    expect(screen.getByText(/3-stage workflow/i)).toBeInTheDocument();
+    expect(screen.getByText(/Original BOM -> New BOM -> Report/i)).toBeInTheDocument();
+    expect(screen.getByText(/Optimized for desktop and tablet workstations/i)).toBeInTheDocument();
     expect(screen.getByText(/Your BOM files stay in this browser/i)).toBeInTheDocument();
     expect(screen.getByText(/\.xlsx only\. CSV, PDF, and \.xls are not supported\./i)).toBeInTheDocument();
     expect(screen.getByText("Original BOM")).toHaveAttribute("aria-current", "step");
@@ -20,9 +23,22 @@ describe("App", () => {
     render(<App />);
 
     const input = screen.getByLabelText(/Original BOM workbook/i);
-    await user.upload(input, new File(["a,b"], "bom.csv", { type: "text/csv" }));
+    await user.upload(input, new File(["a,b"], "bom.xlsx", { type: "text/csv" }));
 
-    expect(screen.getByText(".xlsx only. CSV, PDF, and .xls are not supported.")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent(".xlsx only. CSV, PDF, and .xls are not supported.");
+  });
+
+  it("loads sample BOMs from the original upload step", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /use sample boms/i }));
+
+    expect(screen.getByRole("heading", { name: /comparison report/i })).toBeInTheDocument();
+    expect(screen.getByText(/The report uses the shared comparison key/i)).toHaveTextContent("Internal part number");
+    expect(screen.getAllByText("ERJ-3EKF1002V").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("CRCW060310K0FKEA").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("OJ-1009").length).toBeGreaterThan(0);
   });
 
   it("shows a sticky OpenJar logo link and footer resources", () => {

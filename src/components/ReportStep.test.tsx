@@ -1,4 +1,5 @@
 import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import type { BomRow, MappedBom } from "../bom/types";
 import { ReportStep } from "./ReportStep";
@@ -104,5 +105,55 @@ describe("ReportStep", () => {
     expect(within(annotatedTable).getByText("NEW-IPN-120")).toBeInTheDocument();
     expect(screen.queryByText(/Showing first 100/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Download the Excel report for all rows/i)).not.toBeInTheDocument();
+  });
+
+  it("shows an executive summary, visible-versus-total counts, filter presets, and filtered export copy", async () => {
+    const user = userEvent.setup();
+    const original = mapped([
+      {
+        ...baseRow,
+        line_item: "10",
+        description: "Old description",
+        manufacturer_part_number: "KEEP",
+      },
+      {
+        ...baseRow,
+        line_item: "20",
+        manufacturer_part_number: "REMOVE",
+      },
+      {
+        ...baseRow,
+        line_item: "",
+        manufacturer_part_number: "BLANK",
+      },
+    ]);
+    const next = mapped([
+      {
+        ...baseRow,
+        line_item: "10",
+        description: "New description",
+        manufacturer_part_number: "KEEP",
+      },
+      {
+        ...baseRow,
+        line_item: "30",
+        manufacturer_part_number: "ADD",
+      },
+    ]);
+
+    render(<ReportStep original={original} next={next} />);
+
+    expect(screen.getByRole("heading", { name: /Report summary/i })).toBeInTheDocument();
+    expect(screen.getByText(/Visible changes/i)).toBeInTheDocument();
+    expect(screen.getByText(/Total changes/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /All changes/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Manufacturer changes/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Ignore descriptions/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Issues only/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Download filtered Excel report/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Ignore descriptions/i }));
+
+    expect(screen.getByText(/No changed fields are visible with the current filters/i)).toBeInTheDocument();
   });
 });

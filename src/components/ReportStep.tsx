@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { compareBoms } from "../bom/compare";
 import { downloadReport } from "../bom/exportReport";
-import { BOM_FIELDS, FIELD_LABELS } from "../bom/fields";
+import { BOM_FIELDS, DEFAULT_REPORT_FILTERS, FIELD_LABELS } from "../bom/fields";
 import { loadPreferences, saveReportFilters } from "../bom/preferences";
 import { applyReportFilters } from "../bom/reportFilters";
 import type { BomField, BomRow, ComparisonResult, FieldChange, MappedBom, ReportFilters } from "../bom/types";
@@ -18,6 +18,8 @@ export function ReportStep({ original, next }: { original: MappedBom; next: Mapp
   const [filters, setFilters] = useState<ReportFilters>(() => loadPreferences().reportFilters);
   const result = useMemo(() => compareBoms(original.rows, next.rows, next.matchKey), [original.rows, next.rows, next.matchKey]);
   const filtered = useMemo(() => applyReportFilters(result, filters), [result, filters]);
+  const visibleChangeCount = summaryTotal(filtered.summary);
+  const totalChangeCount = summaryTotal(result.summary);
 
   const updateFilters = (nextFilters: ReportFilters) => {
     setFilters(nextFilters);
@@ -43,21 +45,111 @@ export function ReportStep({ original, next }: { original: MappedBom; next: Mapp
     updateFilters({ ...filters, [field]: checked });
   };
 
+  const applyPreset = (preset: "all" | "line" | "manufacturer" | "ignoreDescriptions" | "issues") => {
+    if (preset === "all") {
+      updateFilters(DEFAULT_REPORT_FILTERS);
+      return;
+    }
+    if (preset === "ignoreDescriptions") {
+      updateFilters({
+        ...filters,
+        changedFields: { ...filters.changedFields, description: false },
+      });
+      return;
+    }
+    if (preset === "manufacturer") {
+      updateFilters({
+        changedFields: Object.fromEntries(BOM_FIELDS.map((field) => [field, field.includes("manufacturer")])) as ReportFilters["changedFields"],
+        addedRows: false,
+        removedRows: false,
+        manufacturerPartAdds: true,
+        manufacturerPartRemoves: true,
+        unmatchedOrBlankRows: false,
+      });
+      return;
+    }
+    if (preset === "line") {
+      updateFilters({
+        changedFields: Object.fromEntries(
+          BOM_FIELDS.map((field) => [
+            field,
+            ["line_item", "internal_part_number", "customer_part_number", "quantity", "reference_designators"].includes(field),
+          ]),
+        ) as ReportFilters["changedFields"],
+        addedRows: true,
+        removedRows: true,
+        manufacturerPartAdds: false,
+        manufacturerPartRemoves: false,
+        unmatchedOrBlankRows: false,
+      });
+      return;
+    }
+    updateFilters({
+      changedFields: Object.fromEntries(BOM_FIELDS.map((field) => [field, false])) as ReportFilters["changedFields"],
+      addedRows: false,
+      removedRows: false,
+      manufacturerPartAdds: false,
+      manufacturerPartRemoves: false,
+      unmatchedOrBlankRows: true,
+    });
+  };
+
   return (
     <section className="section">
       <h2>Comparison report</h2>
       <p className="muted">
-        The report uses the shared comparison key: <strong>{FIELD_LABELS[next.matchKey]}</strong>. Use the filters to
+        The report uses the shared comparison key: <strong>{FIELD_LABELS[next.matchKey]}</strong>{" "}
+        <small title="The field used to line up the original and new BOM rows before comparing values.">
+          What is this?
+        </small>
+        . Use the filters to
         hide noisy changes from the report you are viewing and downloading.
       </p>
       <PrivacyNotice variant="report" />
+      <div className="report-summary">
+        <h3>Report summary</h3>
+        <p>
+          {summarySentence(result)} {filtered.summary.unmatchedOrBlankRows > 0
+            ? `${filtered.summary.unmatchedOrBlankRows} blank-key rows are currently visible for review.`
+            : "No blank-key rows are currently visible."}
+        </p>
+        <div className="summary-counts">
+          <div>
+            <span>Visible changes</span>
+            <strong>{visibleChangeCount}</strong>
+          </div>
+          <div>
+            <span>Total changes</span>
+            <strong>{totalChangeCount}</strong>
+          </div>
+        </div>
+        {visibleChangeCount === 0 && <p className="success-state">No visible changes match the current filters.</p>}
+      </div>
       <div className="metric-row">
         {Object.entries(filtered.summary).map(([label, value]) => (
           <div className="metric" key={label}>
-            <span>{label}</span>
+            <span>{summaryLabel(label)}</span>
             <strong>{value}</strong>
           </div>
         ))}
+      </div>
+      <div className="preset-row" aria-label="Report view presets">
+        <span>View presets</span>
+        <button className="button secondary" type="button" onClick={() => applyPreset("all")}>
+          All changes
+        </button>
+        <button className="button secondary" type="button" onClick={() => applyPreset("line")}>
+          Line changes only
+        </button>
+        <button className="button secondary" type="button" onClick={() => applyPreset("manufacturer")}>
+          Manufacturer changes
+        </button>
+        <button className="button secondary" type="button" onClick={() => applyPreset("ignoreDescriptions")}>
+          Ignore descriptions
+        </button>
+        <button className="button secondary" type="button" onClick={() => applyPreset("issues")}>
+          Issues only
+        </button>
       </div>
       <div className="report-controls">
         <fieldset>
@@ -120,12 +212,14 @@ export function ReportStep({ original, next }: { original: MappedBom; next: Mapp
         </fieldset>
       </div>
       <button className="button primary" onClick={() => downloadReport(result, filters)}>
-        Download Excel report
+        Download filtered Excel report
       </button>
+      <p className="muted export-note">The downloaded workbook uses the current filters.</p>
       <AnnotatedBomSection result={filtered} />
       <h3>Changed fields</h3>
       <div className="table-wrap">
         <table>
+          <caption>Changed field values for matched BOM rows</caption>
           <thead>
             <tr>
               <th>Match</th>
@@ -195,6 +289,7 @@ function AnnotatedBomSection({ result }: { result: ComparisonResult }) {
       </div>
       <div className="table-wrap compact">
         <table className="annotated-bom-table" aria-label="Original BOM with new BOM edits">
+          <caption>Original BOM annotated with new BOM edits</caption>
           <thead>
             <tr>
               <th>Original line</th>
@@ -360,6 +455,7 @@ function RowsSection({ title, rows, tone }: { title: string; rows: BomRow[]; ton
       <h3>{title}</h3>
       <div className="table-wrap">
         <table>
+          <caption>{title}</caption>
           <thead>
             <tr>
               <th>Line</th>
@@ -412,6 +508,7 @@ function PartSection({
       <h3>{title}</h3>
       <div className="table-wrap">
         <table>
+          <caption>{title}</caption>
           <thead>
             <tr>
               <th>Match</th>
@@ -440,4 +537,20 @@ function PartSection({
       </div>
     </>
   );
+}
+
+function summaryTotal(summary: ComparisonResult["summary"]): number {
+  return Object.values(summary).reduce((total, value) => total + value, 0);
+}
+
+function summarySentence(result: ComparisonResult): string {
+  const { addedRows, removedRows, changedFields, manufacturerPartAdds, manufacturerPartRemoves, unmatchedOrBlankRows } =
+    result.summary;
+  return `${addedRows} added rows, ${removedRows} removed rows, ${changedFields} field changes, ${manufacturerPartAdds} manufacturer part adds, ${manufacturerPartRemoves} manufacturer part removes, and ${unmatchedOrBlankRows} blank-key rows were found.`;
+}
+
+function summaryLabel(label: string): string {
+  return label
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (character) => character.toUpperCase());
 }

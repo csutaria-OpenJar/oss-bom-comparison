@@ -45,4 +45,33 @@ describe("PreviewStep", () => {
     expect(onBack).toHaveBeenCalledTimes(1);
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
+
+  it("summarizes mapped fields, omitted fields, and match-key issues before confirmation", () => {
+    render(
+      <PreviewStep
+        label="Original"
+        mapped={{
+          ...mapped,
+          mapping: {
+            line_item: 0,
+            manufacturer_part_number: 1,
+            quantity: 2,
+          },
+          rows: [
+            { ...mapped.rows[0], line_item: "", manufacturer_part_number: "BLANK", quantity: "1" },
+            { ...mapped.rows[0], line_item: "10", manufacturer_part_number: "ABC", quantity: "2" },
+            { ...mapped.rows[0], line_item: "10", manufacturer_part_number: "DEF", quantity: "3" },
+          ],
+        }}
+        onBack={vi.fn()}
+        onConfirm={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/3 total normalized rows/i)).toBeInTheDocument();
+    expect(screen.getByText(/Mapped fields: Line item, Manufacturer part number, Quantity/i)).toBeInTheDocument();
+    expect(screen.getByText(/Omitted fields:/i)).toHaveTextContent("Description");
+    expect(screen.getByText(/Blank Line item keys: 1 row/i)).toBeInTheDocument();
+    expect(screen.getByText(/Duplicate Line item keys: 10/i)).toBeInTheDocument();
+  });
 });

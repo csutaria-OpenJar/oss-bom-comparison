@@ -1,7 +1,7 @@
 const STEPS = [
-  { label: "Original BOM", start: 0, end: 2, total: 3 },
-  { label: "New BOM", start: 3, end: 5, total: 3 },
-  { label: "Report", start: 6, end: 6, total: 1 },
+  { label: "Original BOM", detail: "Upload, map, preview", start: 0, end: 2, total: 3 },
+  { label: "New BOM", detail: "Upload, map, preview", start: 3, end: 5, total: 3 },
+  { label: "Report", detail: "Review and export", start: 6, end: 6, total: 1 },
 ];
 
 export function ProgressSteps({ current }: { current: number }) {
@@ -14,8 +14,11 @@ export function ProgressSteps({ current }: { current: number }) {
 
           return (
             <li key={step.label}>
-              <span aria-current={isActive ? "step" : undefined} className={isActive ? "active" : ""}>
-                {step.label}
+              <span className={isActive ? "active" : ""}>
+                <span aria-current={isActive ? "step" : undefined} className="wizard-step-label">
+                  {step.label}
+                </span>
+                <small>{step.detail}</small>
                 <span
                   aria-label={`${step.label} progress ${completed} of ${step.total}`}
                   className="wizard-step-progress"

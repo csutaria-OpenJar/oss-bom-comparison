@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { BOM_FIELDS, FIELD_LABELS, MATCH_KEYS } from "../bom/fields";
+import { matchKeyDiagnosticMessages } from "../bom/diagnostics";
 import { fieldsByColumn, suggestMapping, validateMapping } from "../bom/mapping";
 import { loadMappingPreference, loadPreferences, saveMappingPreference } from "../bom/preferences";
 import type { BomField, MappedBom, MatchKey, UploadedWorkbook } from "../bom/types";
-import { extractMappedRows, parseWorkbook, previewWorksheet } from "../bom/workbook";
+import { extractMappedRows, parseWorkbook, previewWorksheet, worksheetStats } from "../bom/workbook";
 
 interface MappingStepProps {
   label: "Original" | "New";
@@ -29,6 +30,13 @@ export function MappingStep({ label, workbook, requiredMatchKey, onBack, onMappe
       };
     }
   }, [parsed, sheetName, headerRow]);
+  const stats = useMemo(() => {
+    try {
+      return worksheetStats(parsed, sheetName, headerRow);
+    } catch {
+      return { dataRows: 0, detectedColumns: 0 };
+    }
+  }, [parsed, sheetName, headerRow]);
 
   useEffect(() => {
     if (!preview.value) {
@@ -47,6 +55,17 @@ export function MappingStep({ label, workbook, requiredMatchKey, onBack, onMappe
   }, [preview]);
 
   const errors = preview.value ? validateMapping(columnFields, matchKey) : [];
+  const mappedRows = useMemo(() => {
+    if (!preview.value || errors.length > 0) {
+      return [];
+    }
+    try {
+      return extractMappedRows(parsed, sheetName, headerRow, fieldsByColumn(columnFields));
+    } catch {
+      return [];
+    }
+  }, [columnFields, errors.length, headerRow, parsed, preview.value, sheetName]);
+  const keyDiagnostics = mappedRows.length > 0 ? matchKeyDiagnosticMessages(mappedRows, matchKey) : [];
 
   const updateColumnField = (columnIndex: number, field: BomField | "") => {
     const next = [...columnFields];
@@ -77,6 +96,24 @@ export function MappingStep({ label, workbook, requiredMatchKey, onBack, onMappe
         Choose the worksheet, header row, mapped fields, and comparison key. Ignore columns you do not want in the
         comparison report.
       </p>
+      <div className="context-grid" aria-label={`${label} workbook context`}>
+        <div>
+          <span>Workbook</span>
+          <strong>{workbook.fileName}</strong>
+        </div>
+        <div>
+          <span>Worksheets</span>
+          <strong>
+            {workbook.sheetNames.length} {workbook.sheetNames.length === 1 ? "worksheet" : "worksheets"}
+          </strong>
+        </div>
+        <div>
+          <span>Selected range</span>
+          <strong>
+            {stats.dataRows} data rows, {stats.detectedColumns} detected columns
+          </strong>
+        </div>
+      </div>
       {requiredMatchKey && (
         <p className="notice">
           The new BOM uses the same comparison key selected for the original BOM: {FIELD_LABELS[requiredMatchKey]}.
@@ -92,17 +129,36 @@ export function MappingStep({ label, workbook, requiredMatchKey, onBack, onMappe
           </select>
         </label>
         <label>
-          Header row
-          <input
-            type="number"
-            min={1}
-            value={headerRow}
-            onChange={(event) => setHeaderRow(Number(event.target.value))}
-          />
+          <span>
+            Header row{" "}
+            <small title="Pick the row containing column names. The highlighted row in the preview is treated as headers.">
+              What is this?
+            </small>
+          </span>
+          <div className="number-stepper">
+            <button className="button secondary" type="button" onClick={() => setHeaderRow(Math.max(1, headerRow - 1))}>
+              -
+            </button>
+            <input
+              type="number"
+              min={1}
+              value={headerRow}
+              onChange={(event) => setHeaderRow(Number(event.target.value))}
+            />
+            <button className="button secondary" type="button" onClick={() => setHeaderRow(headerRow + 1)}>
+              +
+            </button>
+          </div>
         </label>
         <label>
-          Match key
+          <span>
+            Match key{" "}
+            <small title="The field used to line up the original and new BOM rows before comparing values.">
+              What is this?
+            </small>
+          </span>
           <select
+            aria-label="Match key"
             disabled={Boolean(requiredMatchKey)}
             value={matchKey}
             onChange={(event) => setMatchKey(event.target.value as MatchKey)}
@@ -115,12 +171,25 @@ export function MappingStep({ label, workbook, requiredMatchKey, onBack, onMappe
           </select>
         </label>
       </div>
-      {preview.error && <p className="error">{preview.error}</p>}
+      {preview.error && (
+        <p className="error" role="alert">
+          {preview.error}
+        </p>
+      )}
       {errors.map((error) => (
-        <p className="error" key={error}>
+        <p className="error" key={error} role="alert">
           {error}
         </p>
       ))}
+      {keyDiagnostics.length > 0 && (
+        <div className="diagnostic-panel" role="status">
+          <strong>Match-key review</strong>
+          {keyDiagnostics.map((message) => (
+            <p key={message}>{message}</p>
+          ))}
+          <small>A different match key may produce a cleaner report.</small>
+        </div>
+      )}
       {preview.value && (
         <div className="mapping-grid-wrap">
           <table className="mapping-grid">
@@ -163,7 +232,12 @@ export function MappingStep({ label, workbook, requiredMatchKey, onBack, onMappe
         <button className="button secondary" onClick={onBack}>
           Back
         </button>
-        <button className="button primary" disabled={!preview.value || errors.length > 0} onClick={confirmMapping}>
+        <button
+          className="button primary"
+          disabled={!preview.value || errors.length > 0}
+          onClick={confirmMapping}
+          title={errors.length > 0 ? errors.join(" ") : undefined}
+        >
           Preview {label.toLowerCase()} BOM
         </button>
       </div>

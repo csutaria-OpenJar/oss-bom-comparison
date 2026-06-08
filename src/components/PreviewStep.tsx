@@ -1,3 +1,4 @@
+import { mappedFieldLabels, matchKeyDiagnosticMessages, omittedFieldLabels } from "../bom/diagnostics";
 import type { MappedBom } from "../bom/types";
 
 export function PreviewStep({
@@ -11,12 +12,40 @@ export function PreviewStep({
   onBack: () => void;
   onConfirm: () => void;
 }) {
+  const mappedFields = mappedFieldLabels(mapped.mapping);
+  const omittedFields = omittedFieldLabels(mapped.mapping);
+  const diagnostics = matchKeyDiagnosticMessages(mapped.rows, mapped.matchKey);
+
   return (
     <section className="section">
       <h2>Preview {label.toLowerCase()} BOM</h2>
       <p className="muted">Review the normalized rows before continuing. Showing the first 20 rows.</p>
+      <div className="context-grid" aria-label={`${label} preview summary`}>
+        <div>
+          <span>Rows</span>
+          <strong>{mapped.rows.length} total normalized rows</strong>
+        </div>
+        <div>
+          <span>Mapped fields</span>
+          <strong>Mapped fields: {mappedFields.join(", ")}</strong>
+        </div>
+        <div>
+          <span>Omitted fields</span>
+          <strong>Omitted fields: {omittedFields.length > 0 ? omittedFields.join(", ") : "None"}</strong>
+        </div>
+      </div>
+      {diagnostics.length > 0 && (
+        <div className="diagnostic-panel" role="status">
+          <strong>Match-key review</strong>
+          {diagnostics.map((message) => (
+            <p key={message}>{message}</p>
+          ))}
+          <small>Confirm only if these rows are expected for this BOM.</small>
+        </div>
+      )}
       <div className="table-wrap">
         <table>
+          <caption>First 20 normalized {label.toLowerCase()} BOM rows</caption>
           <thead>
             <tr>
               <th>Line</th>

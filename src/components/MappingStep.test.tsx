@@ -53,4 +53,31 @@ describe("MappingStep", () => {
 
     expect(onBack).toHaveBeenCalledTimes(1);
   });
+
+  it("shows workbook context and match-key quality diagnostics before preview", () => {
+    render(
+      <MappingStep
+        label="Original"
+        workbook={{
+          fileName: "original.xlsx",
+          data: makeWorkbookBuffer([
+            ["Line", "MPN", "Qty"],
+            ["", "BLANK-KEY", "1"],
+            ["10", "ABC-123", "2"],
+            ["10", "DEF-456", "3"],
+          ]),
+          sheetNames: ["BOM"],
+        }}
+        onBack={vi.fn()}
+        onMapped={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/original.xlsx/i)).toBeInTheDocument();
+    expect(screen.getByText(/1 worksheet/i)).toBeInTheDocument();
+    expect(screen.getByText(/3 data rows/i)).toBeInTheDocument();
+    expect(screen.getByText(/3 detected columns/i)).toBeInTheDocument();
+    expect(screen.getByText(/Blank Line item keys: 1 row/i)).toBeInTheDocument();
+    expect(screen.getByText(/Duplicate Line item keys: 10/i)).toBeInTheDocument();
+  });
 });

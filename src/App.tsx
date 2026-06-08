@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createSampleMappedBoms } from "./bom/sampleBoms";
 import type { MappedBom, UploadedWorkbook } from "./bom/types";
 import { MappingStep } from "./components/MappingStep";
 import { PreviewStep } from "./components/PreviewStep";
@@ -24,6 +25,15 @@ export default function App() {
     return () => window.removeEventListener("app-error", handler);
   }, []);
 
+  const resetComparison = () => {
+    setStep(0);
+    setError("");
+    setOriginalWorkbook(null);
+    setNewWorkbook(null);
+    setOriginalBom(null);
+    setNewBom(null);
+  };
+
   return (
     <div className="page-shell">
       <header className="brand-header">
@@ -39,11 +49,45 @@ export default function App() {
           </div>
           <PrivacyNotice variant="header" />
         </div>
+        <section className="workflow-summary" aria-label="Workflow summary">
+          <div>
+            <strong>3-stage workflow</strong>
+            <span>Original BOM -&gt; New BOM -&gt; Report</span>
+          </div>
+          <div>
+            <strong>Expected time</strong>
+            <span>2-5 minutes for mapped Excel BOMs</span>
+          </div>
+          <div>
+            <strong>Desktop app</strong>
+            <span>Optimized for desktop and tablet workstations with wide BOM tables.</span>
+          </div>
+        </section>
         <ProgressSteps current={step} />
-        {error && <p className="error">{error}</p>}
+        <ComparisonContext
+          originalWorkbook={originalWorkbook}
+          newWorkbook={newWorkbook}
+          originalBom={originalBom}
+          newBom={newBom}
+          onReset={step > 0 || originalWorkbook || newWorkbook || originalBom || newBom ? resetComparison : undefined}
+        />
+        {error && (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        )}
         {step === 0 && (
           <UploadStep
             label="Original"
+            onUseSampleBoms={() => {
+              const sample = createSampleMappedBoms();
+              setError("");
+              setOriginalWorkbook(null);
+              setNewWorkbook(null);
+              setOriginalBom(sample.original);
+              setNewBom(sample.next);
+              setStep(6);
+            }}
             onUploaded={(workbook) => {
               setError("");
               setOriginalWorkbook(workbook);
@@ -105,5 +149,49 @@ export default function App() {
         <a href="https://openjartech.com/">OpenJar website</a>
       </footer>
     </div>
+  );
+}
+
+function ComparisonContext({
+  originalWorkbook,
+  newWorkbook,
+  originalBom,
+  newBom,
+  onReset,
+}: {
+  originalWorkbook: UploadedWorkbook | null;
+  newWorkbook: UploadedWorkbook | null;
+  originalBom: MappedBom | null;
+  newBom: MappedBom | null;
+  onReset?: () => void;
+}) {
+  if (!onReset) {
+    return null;
+  }
+
+  return (
+    <section className="comparison-context" aria-label="Current comparison">
+      <div>
+        <span>Original</span>
+        <strong>{originalBom?.fileName ?? originalWorkbook?.fileName ?? "Not selected"}</strong>
+        {originalBom && (
+          <small>
+            {originalBom.sheetName}, header row {originalBom.headerRow}, {originalBom.rows.length} rows
+          </small>
+        )}
+      </div>
+      <div>
+        <span>New</span>
+        <strong>{newBom?.fileName ?? newWorkbook?.fileName ?? "Not selected"}</strong>
+        {newBom && (
+          <small>
+            {newBom.sheetName}, header row {newBom.headerRow}, {newBom.rows.length} rows
+          </small>
+        )}
+      </div>
+      <button className="button secondary" type="button" onClick={onReset}>
+        Start over
+      </button>
+    </section>
   );
 }

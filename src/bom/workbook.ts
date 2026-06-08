@@ -98,6 +98,15 @@ export function extractMappedRows(
   }, []);
 }
 
+export function worksheetStats(parsed: ParsedWorkbook, sheetName: string, headerRow: number) {
+  const table = worksheetRows(parsed, sheetName);
+  const headers = table[headerRow - 1] ? trimTrailingEmpty(table[headerRow - 1].map(normalizeCell)) : [];
+  return {
+    dataRows: Math.max(0, table.length - headerRow),
+    detectedColumns: headers.length,
+  };
+}
+
 function worksheetRows(parsed: ParsedWorkbook, sheetName: string): unknown[][] {
   const sheet = parsed.workbook.Sheets[sheetName];
   if (!sheet) {
