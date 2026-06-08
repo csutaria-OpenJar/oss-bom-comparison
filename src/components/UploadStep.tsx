@@ -13,6 +13,8 @@ interface UploadStepProps {
 export function UploadStep({ label, onUploaded, onUseSampleBoms }: UploadStepProps) {
   const inputId = `${label.toLowerCase()}-bom-upload`;
   const [selectedFileName, setSelectedFileName] = useState("");
+  const [uploadedWorkbook, setUploadedWorkbook] = useState<UploadedWorkbook | null>(null);
+  const [isParsing, setIsParsing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
   const handleFile = async (file: File | undefined) => {
@@ -20,23 +22,28 @@ export function UploadStep({ label, onUploaded, onUseSampleBoms }: UploadStepPro
       return;
     }
     setSelectedFileName(file.name);
+    setUploadedWorkbook(null);
 
     const validation = validateWorkbookFile(file);
     if (!validation.ok) {
+      setIsParsing(false);
       window.dispatchEvent(new CustomEvent("app-error", { detail: validation.message }));
       return;
     }
 
     try {
+      setIsParsing(true);
       const data = await file.arrayBuffer();
       const parsed = await parseWorkbook(data);
-      onUploaded({ fileName: file.name, workbook: parsed, sheetNames: parsed.sheetNames });
+      setUploadedWorkbook({ fileName: file.name, workbook: parsed, sheetNames: parsed.sheetNames });
     } catch (error) {
       window.dispatchEvent(
         new CustomEvent("app-error", {
           detail: error instanceof Error ? error.message : "Upload a valid .xlsx workbook.",
         }),
       );
+    } finally {
+      setIsParsing(false);
     }
   };
 
@@ -70,6 +77,20 @@ export function UploadStep({ label, onUploaded, onUseSampleBoms }: UploadStepPro
           onChange={(event) => void handleFile(event.target.files?.[0])}
         />
       </label>
+      <div className="step-actions" role="group" aria-label={`Upload ${label.toLowerCase()} BOM actions`}>
+        <button
+          className="button primary"
+          type="button"
+          disabled={!uploadedWorkbook || isParsing}
+          onClick={() => {
+            if (uploadedWorkbook) {
+              onUploaded(uploadedWorkbook);
+            }
+          }}
+        >
+          {isParsing ? "Parsing workbook..." : "Next step"}
+        </button>
+      </div>
       {onUseSampleBoms && (
         <div className="sample-bom-action" role="group" aria-label="Sample BOM action">
           <p className="muted">No workbook handy? Load two sample BOMs with line-item, quantity, and MPN changes.</p>

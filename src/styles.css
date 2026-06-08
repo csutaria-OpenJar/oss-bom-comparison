@@ -53,6 +53,8 @@ select {
 }
 
 .page-shell {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
 }
 
@@ -83,9 +85,11 @@ select {
 }
 
 .app-shell {
+  flex: 1 0 auto;
   margin: 0 auto;
   max-width: 1440px;
   padding: 28px 24px 48px;
+  width: 100%;
 }
 
 .topbar {

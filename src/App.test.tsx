@@ -1,7 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+// @ts-expect-error This browser app does not install Node types, but Vitest runs this CSS regression in Node.
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import App from "./App";
+import { makeWorkbookBuffer } from "./test/testWorkbook";
 
 describe("App", () => {
   it("starts with a streamlined upload screen", () => {
@@ -26,6 +29,33 @@ describe("App", () => {
     await user.upload(input, new File(["a,b"], "bom.xlsx", { type: "text/csv" }));
 
     expect(screen.getByRole("alert")).toHaveTextContent(".xlsx only. CSV, PDF, and .xls are not supported.");
+  });
+
+  it("shows a next step action after selecting a valid original workbook", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    const workbook = await makeWorkbookBuffer([
+      ["Line", "MPN", "Qty"],
+      ["10", "ABC-123", "2"],
+    ]);
+    const input = screen.getByLabelText(/Original BOM workbook/i);
+    const file = new File([workbook], "original-bom.xlsx", {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    Object.defineProperty(file, "arrayBuffer", {
+      value: () => Promise.resolve(workbook),
+    });
+
+    await user.upload(input, file);
+
+    expect(screen.getByText(/Selected file: original-bom\.xlsx/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /next step/i })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /map original BOM columns/i })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /next step/i }));
+
+    expect(screen.getByRole("heading", { name: /map original BOM columns/i })).toBeInTheDocument();
   });
 
   it("loads sample BOMs from the original upload step", async () => {
@@ -73,5 +103,13 @@ describe("App", () => {
       "https://openjartech.com/",
     );
     expect(screen.getAllByTestId("footer-link-icon")).toHaveLength(4);
+  });
+
+  it("uses the page shell to keep the footer at the viewport bottom", () => {
+    const styles = readFileSync("src/styles.css", "utf8");
+
+    expect(styles).toMatch(/\.page-shell\s*{[^}]*display:\s*flex;/s);
+    expect(styles).toMatch(/\.page-shell\s*{[^}]*flex-direction:\s*column;/s);
+    expect(styles).toMatch(/\.app-shell\s*{[^}]*flex:\s*1(?:\s+0\s+auto)?;/s);
   });
 });
