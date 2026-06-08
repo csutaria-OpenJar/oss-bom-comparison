@@ -3,10 +3,12 @@ import type { MappedBom } from "../bom/types";
 export function PreviewStep({
   label,
   mapped,
+  onBack,
   onConfirm,
 }: {
   label: "Original" | "New";
   mapped: MappedBom;
+  onBack: () => void;
   onConfirm: () => void;
 }) {
   return (
@@ -43,9 +45,14 @@ export function PreviewStep({
           </tbody>
         </table>
       </div>
-      <button className="button primary" onClick={onConfirm}>
-        Confirm {label.toLowerCase()} BOM
-      </button>
+      <div className="step-actions" role="group" aria-label={`Preview ${label.toLowerCase()} BOM actions`}>
+        <button className="button secondary" onClick={onBack}>
+          Back
+        </button>
+        <button className="button primary" onClick={onConfirm}>
+          Confirm {label.toLowerCase()} BOM
+        </button>
+      </div>
     </section>
   );
 }

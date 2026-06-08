@@ -9,10 +9,11 @@ interface MappingStepProps {
   label: "Original" | "New";
   workbook: UploadedWorkbook;
   requiredMatchKey?: MatchKey;
+  onBack: () => void;
   onMapped: (mapped: MappedBom) => void;
 }
 
-export function MappingStep({ label, workbook, requiredMatchKey, onMapped }: MappingStepProps) {
+export function MappingStep({ label, workbook, requiredMatchKey, onBack, onMapped }: MappingStepProps) {
   const parsed = useMemo(() => parseWorkbook(workbook.data), [workbook.data]);
   const [sheetName, setSheetName] = useState(workbook.sheetNames[0] ?? "");
   const [headerRow, setHeaderRow] = useState(1);
@@ -158,9 +159,14 @@ export function MappingStep({ label, workbook, requiredMatchKey, onMapped }: Map
           </table>
         </div>
       )}
-      <button className="button primary" disabled={!preview.value || errors.length > 0} onClick={confirmMapping}>
-        Preview {label.toLowerCase()} BOM
-      </button>
+      <div className="step-actions" role="group" aria-label={`Map ${label.toLowerCase()} BOM actions`}>
+        <button className="button secondary" onClick={onBack}>
+          Back
+        </button>
+        <button className="button primary" disabled={!preview.value || errors.length > 0} onClick={confirmMapping}>
+          Preview {label.toLowerCase()} BOM
+        </button>
+      </div>
     </section>
   );
 }

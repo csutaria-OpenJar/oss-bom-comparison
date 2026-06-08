@@ -201,6 +201,24 @@ button:hover,
   background: var(--cta-soft);
 }
 
+.button.secondary {
+  background: var(--panel);
+  border-color: var(--line);
+  color: var(--text);
+}
+
+.button.secondary:hover {
+  background: #f7f7f5;
+}
+
+.step-actions {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-top: 24px;
+}
+
 input,
 select {
   border: 1px solid var(--line);

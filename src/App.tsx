@@ -55,6 +55,7 @@ export default function App() {
           <MappingStep
             label="Original"
             workbook={originalWorkbook}
+            onBack={() => setStep(0)}
             onMapped={(mapped) => {
               setOriginalBom(mapped);
               setStep(2);
@@ -62,7 +63,7 @@ export default function App() {
           />
         )}
         {step === 2 && originalBom && (
-          <PreviewStep label="Original" mapped={originalBom} onConfirm={() => setStep(3)} />
+          <PreviewStep label="Original" mapped={originalBom} onBack={() => setStep(1)} onConfirm={() => setStep(3)} />
         )}
         {step === 3 && (
           <UploadStep
@@ -79,13 +80,16 @@ export default function App() {
             label="New"
             workbook={newWorkbook}
             requiredMatchKey={originalBom.matchKey}
+            onBack={() => setStep(3)}
             onMapped={(mapped) => {
               setNewBom(mapped);
               setStep(5);
             }}
           />
         )}
-        {step === 5 && newBom && <PreviewStep label="New" mapped={newBom} onConfirm={() => setStep(6)} />}
+        {step === 5 && newBom && (
+          <PreviewStep label="New" mapped={newBom} onBack={() => setStep(4)} onConfirm={() => setStep(6)} />
+        )}
         {step === 6 && originalBom && newBom && <ReportStep original={originalBom} next={newBom} />}
       </main>
       <footer className="app-footer">
