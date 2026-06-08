@@ -112,14 +112,39 @@ export function compareBoms(originalRows: BomRow[], nextRows: BomRow[], matchKey
 function changedFieldsForRows(original: BomRow, next: BomRow, matchKey: MatchKey): FieldChange[] {
   return BOM_FIELDS
     .filter((field) => field !== matchKey)
-    .filter((field) => compareValue(field, original[field]) !== compareValue(field, next[field]))
-    .map((field) => ({
-      matchKey,
-      matchValue: next[matchKey],
-      field,
-      originalValue: original[field],
-      newValue: next[field],
-    }));
+    .map((field) => fieldChangeForRows(field, original, next, matchKey))
+    .filter((change): change is FieldChange => change !== undefined);
+}
+
+function fieldChangeForRows(
+  field: BomField,
+  original: BomRow,
+  next: BomRow,
+  matchKey: MatchKey,
+): FieldChange | undefined {
+  if (field === "reference_designators") {
+    const diff = referenceDesignatorDiff(original[field], next[field]);
+    if (diff && diff.added.length === 0 && diff.removed.length === 0) return undefined;
+    if (diff) {
+      return {
+        matchKey,
+        matchValue: next[matchKey],
+        field,
+        originalValue: original[field],
+        newValue: next[field],
+        referenceDesignatorDiff: diff,
+      };
+    }
+  }
+
+  if (compareValue(field, original[field]) === compareValue(field, next[field])) return undefined;
+  return {
+    matchKey,
+    matchValue: next[matchKey],
+    field,
+    originalValue: original[field],
+    newValue: next[field],
+  };
 }
 
 function groupByMatchKey(rows: BomRow[], matchKey: MatchKey): Map<string, BomRow[]> {
@@ -189,6 +214,65 @@ function normalizeQuantity(value: string): string | undefined {
   if (!Number.isFinite(numeric)) return undefined;
 
   return String(numeric);
+}
+
+function referenceDesignatorDiff(
+  originalValue: string,
+  nextValue: string,
+): { added: string[]; removed: string[] } | undefined {
+  const originalRefs = parseReferenceDesignators(originalValue);
+  const nextRefs = parseReferenceDesignators(nextValue);
+  if (originalRefs.length === 0 || nextRefs.length === 0) return undefined;
+
+  const originalSet = new Set(originalRefs.map((ref) => ref.toLowerCase()));
+  const nextSet = new Set(nextRefs.map((ref) => ref.toLowerCase()));
+  const originalDisplay = new Map(originalRefs.map((ref) => [ref.toLowerCase(), ref]));
+  const nextDisplay = new Map(nextRefs.map((ref) => [ref.toLowerCase(), ref]));
+
+  return {
+    added: nextRefs
+      .filter((ref) => !originalSet.has(ref.toLowerCase()))
+      .map((ref) => nextDisplay.get(ref.toLowerCase()) ?? ref),
+    removed: originalRefs
+      .filter((ref) => !nextSet.has(ref.toLowerCase()))
+      .map((ref) => originalDisplay.get(ref.toLowerCase()) ?? ref),
+  };
+}
+
+function parseReferenceDesignators(value: string): string[] {
+  const refs: string[] = [];
+  const seen = new Set<string>();
+  for (const rawToken of value.split(",")) {
+    const token = rawToken.trim();
+    if (!token) continue;
+    const expanded = expandReferenceRange(token);
+    for (const ref of expanded) {
+      const normalized = ref.toLowerCase();
+      if (!seen.has(normalized)) {
+        seen.add(normalized);
+        refs.push(ref.toUpperCase());
+      }
+    }
+  }
+  return refs;
+}
+
+function expandReferenceRange(token: string): string[] {
+  const range = token.match(/^([a-z]+)(\d+)\s*-\s*\1(\d+)$/i);
+  if (!range) return isReferenceToken(token) ? [token] : [];
+
+  const prefix = range[1];
+  const start = Number(range[2]);
+  const end = Number(range[3]);
+  if (!Number.isInteger(start) || !Number.isInteger(end) || start > end || end - start > 1000) {
+    return [];
+  }
+
+  return Array.from({ length: end - start + 1 }, (_, index) => `${prefix}${start + index}`);
+}
+
+function isReferenceToken(token: string): boolean {
+  return /^[a-z]+\d+[a-z0-9-]*$/i.test(token.trim());
 }
 
 function normalizeKey(value: string): string {

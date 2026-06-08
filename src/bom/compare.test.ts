@@ -70,6 +70,36 @@ describe("compareBoms", () => {
     ]);
   });
 
+  it("treats reordered and ranged reference designators as unchanged", () => {
+    const original = [{ ...baseRow, line_item: "10", reference_designators: "R1-R3" }];
+    const next = [{ ...baseRow, line_item: "10", reference_designators: "r3, R2, R1" }];
+
+    const result = compareBoms(original, next, "line_item");
+
+    expect(result.changedFields).toEqual([]);
+  });
+
+  it("reports precise reference designator additions and removals", () => {
+    const original = [{ ...baseRow, line_item: "10", reference_designators: "C1-C3" }];
+    const next = [{ ...baseRow, line_item: "10", reference_designators: "C2,C3,C4" }];
+
+    const result = compareBoms(original, next, "line_item");
+
+    expect(result.changedFields).toEqual([
+      {
+        matchKey: "line_item",
+        matchValue: "10",
+        field: "reference_designators",
+        originalValue: "C1-C3",
+        newValue: "C2,C3,C4",
+        referenceDesignatorDiff: {
+          added: ["C4"],
+          removed: ["C1"],
+        },
+      },
+    ]);
+  });
+
   it("surfaces blank and duplicate match keys", () => {
     const validation = validateMatchKeys([
       { ...baseRow, line_item: "10" },
