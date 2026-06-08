@@ -10,6 +10,7 @@ import { UploadStep } from "./components/UploadStep";
 import openJarLogo from "../assets/Horizontal Logos/1.png";
 
 type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+type FooterIconName = "github" | "linkedin" | "calendar" | "license" | "website";
 
 export default function App() {
   const [step, setStep] = useState<Step>(0);
@@ -137,18 +138,72 @@ export default function App() {
         {step === 6 && originalBom && newBom && <ReportStep original={originalBom} next={newBom} />}
       </main>
       <footer className="app-footer">
-        <a href="https://github.com/csutaria-OpenJar/oss-bom-comparison">GitHub repository</a>
-        <a className="footer-icon-link" href="https://www.linkedin.com/company/openjartech/" aria-label="OpenJar LinkedIn">
-          <svg aria-hidden="true" viewBox="0 0 24 24" className="linkedin-icon">
-            <path d="M20.45 20.45h-3.56v-5.58c0-1.33-.02-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.95v5.67H9.35V9h3.41v1.56h.05c.47-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.44a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12Zm1.78 13.01H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0Z" />
-          </svg>
-          <span>LinkedIn</span>
-        </a>
-        <a href="https://openjartech.com/meetings/csutaria">Talk to me</a>
-        <a href="https://github.com/csutaria-OpenJar/oss-bom-comparison/blob/main/LICENSE">License terms</a>
-        <a href="https://openjartech.com/">OpenJar website</a>
+        <FooterLink icon="github" href="https://github.com/csutaria-OpenJar/oss-bom-comparison">
+          GitHub repository
+        </FooterLink>
+        <FooterLink icon="linkedin" href="https://www.linkedin.com/company/openjartech/" ariaLabel="OpenJar LinkedIn">
+          LinkedIn
+        </FooterLink>
+        <FooterLink icon="calendar" href="https://openjartech.com/meetings/csutaria">
+          Talk to me
+        </FooterLink>
+        <FooterLink
+          icon="license"
+          href="https://github.com/csutaria-OpenJar/oss-bom-comparison?tab=MIT-1-ov-file#readme"
+        >
+          License terms
+        </FooterLink>
+        <FooterLink icon="website" href="https://openjartech.com/">
+          OpenJar website
+        </FooterLink>
       </footer>
     </div>
+  );
+}
+
+function FooterLink({
+  icon,
+  href,
+  ariaLabel,
+  children,
+}: {
+  icon: FooterIconName;
+  href: string;
+  ariaLabel?: string;
+  children: string;
+}) {
+  return (
+    <a href={href} aria-label={ariaLabel}>
+      <FooterIcon name={icon} />
+      <span>{children}</span>
+    </a>
+  );
+}
+
+function FooterIcon({ name }: { name: FooterIconName }) {
+  if (name === "linkedin") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24" className="footer-link-icon" data-testid="footer-link-icon">
+        <path d="M20.45 20.45h-3.56v-5.58c0-1.33-.02-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.95v5.67H9.35V9h3.41v1.56h.05c.47-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.44a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12Zm1.78 13.01H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0Z" />
+      </svg>
+    );
+  }
+
+  const paths: Record<Exclude<FooterIconName, "linkedin">, string> = {
+    github:
+      "M12 .3a12 12 0 0 0-3.8 23.38c.6.11.82-.26.82-.58v-2.04c-3.34.73-4.04-1.42-4.04-1.42-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.2.08 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.5.99.11-.78.42-1.3.76-1.6-2.67-.31-5.47-1.34-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23A11.4 11.4 0 0 1 12 5.78c1.02 0 2.05.14 3.01.4 2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.24 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.62-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.69.83.57A12 12 0 0 0 12 .3Z",
+    calendar:
+      "M7 2h2v2h6V2h2v2h3a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h3V2Zm15 8H2v12h20V10ZM4 6v2h16V6h-3v2h-2V6H9v2H7V6H4Z",
+    license:
+      "M5 3h10l4 4v18H5V3Zm9 2H7v20h10V8h-3V5Zm-5 8h6v2H9v-2Zm0 4h6v2H9v-2Zm0 4h4v2H9v-2Z",
+    website:
+      "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm6.93 9h-3.02a15.7 15.7 0 0 0-1.06-5.02A8.02 8.02 0 0 1 18.93 11ZM12 4.04c.72 1.05 1.38 3 1.61 6.96H8.39C8.62 7.04 9.28 5.09 12 4.04ZM4.07 13h3.02c.12 1.92.48 3.67 1.06 5.02A8.02 8.02 0 0 1 4.07 13Zm3.02-2H4.07a8.02 8.02 0 0 1 4.08-5.02A15.7 15.7 0 0 0 7.09 11ZM12 19.96c-.72-1.05-1.38-3-1.61-6.96h5.22c-.23 3.96-.89 5.91-3.61 6.96Zm3.85-1.94c.58-1.35.94-3.1 1.06-5.02h3.02a8.02 8.02 0 0 1-4.08 5.02Z",
+  };
+
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="footer-link-icon" data-testid="footer-link-icon">
+      <path d={paths[name]} />
+    </svg>
   );
 }
 

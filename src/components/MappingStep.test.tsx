@@ -54,7 +54,9 @@ describe("MappingStep", () => {
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
-  it("shows workbook context and match-key quality diagnostics before preview", () => {
+  it("shows workbook context and keeps match-key quality diagnostics collapsed by default", async () => {
+    const user = userEvent.setup();
+
     render(
       <MappingStep
         label="Original"
@@ -77,7 +79,42 @@ describe("MappingStep", () => {
     expect(screen.getByText(/1 worksheet/i)).toBeInTheDocument();
     expect(screen.getByText(/3 data rows/i)).toBeInTheDocument();
     expect(screen.getByText(/3 detected columns/i)).toBeInTheDocument();
+
+    const diagnostic = screen.getByTestId("match-key-diagnostics");
+    expect(diagnostic).not.toHaveAttribute("open");
+
+    await user.click(screen.getByText(/match-key review/i));
+
     expect(screen.getByText(/Blank Line item keys: 1 row/i)).toBeInTheDocument();
     expect(screen.getByText(/Duplicate Line item keys: 10/i)).toBeInTheDocument();
+  });
+
+  it("marks mapped column controls and can show more preview rows", async () => {
+    const user = userEvent.setup();
+    const rows = [
+      ["Line", "MPN", "Unmapped note"],
+      ...Array.from({ length: 16 }, (_, index) => [`${index + 1}`, `MPN-${index + 1}`, `note-${index + 1}`]),
+    ];
+
+    render(
+      <MappingStep
+        label="Original"
+        workbook={{
+          fileName: "original.xlsx",
+          data: makeWorkbookBuffer(rows),
+          sheetNames: ["BOM"],
+        }}
+        onBack={vi.fn()}
+        onMapped={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText("Map column A").closest("th")).toHaveClass("mapped-column");
+    expect(screen.getByLabelText("Map column C").closest("th")).toHaveClass("ignored-column");
+    expect(screen.queryByText("MPN-16")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /view more preview rows/i }));
+
+    expect(screen.getByText("MPN-16")).toBeInTheDocument();
   });
 });

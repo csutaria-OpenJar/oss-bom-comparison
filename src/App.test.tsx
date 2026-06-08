@@ -32,6 +32,11 @@ describe("App", () => {
     const user = userEvent.setup();
     render(<App />);
 
+    const sampleAction = screen.getByRole("group", { name: /sample bom action/i });
+    const sampleButton = screen.getByRole("button", { name: /use sample boms/i });
+    expect(sampleAction).toHaveClass("sample-bom-action");
+    expect(sampleAction.lastElementChild).toBe(sampleButton);
+
     await user.click(screen.getByRole("button", { name: /use sample boms/i }));
 
     expect(screen.getByRole("heading", { name: /comparison report/i })).toBeInTheDocument();
@@ -64,11 +69,12 @@ describe("App", () => {
     );
     expect(screen.getByRole("link", { name: /license terms/i })).toHaveAttribute(
       "href",
-      "https://github.com/csutaria-OpenJar/oss-bom-comparison/blob/main/LICENSE",
+      "https://github.com/csutaria-OpenJar/oss-bom-comparison?tab=MIT-1-ov-file#readme",
     );
     expect(screen.getByRole("link", { name: /openjar website/i })).toHaveAttribute(
       "href",
       "https://openjartech.com/",
     );
+    expect(screen.getAllByTestId("footer-link-icon")).toHaveLength(5);
   });
 });

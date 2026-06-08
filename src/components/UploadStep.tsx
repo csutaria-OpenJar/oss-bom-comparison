@@ -71,7 +71,7 @@ export function UploadStep({ label, onUploaded, onUseSampleBoms }: UploadStepPro
         />
       </label>
       {onUseSampleBoms && (
-        <div className="sample-bom-action">
+        <div className="sample-bom-action" role="group" aria-label="Sample BOM action">
           <p className="muted">No workbook handy? Load two sample BOMs with line-item, quantity, and MPN changes.</p>
           <button className="button secondary" type="button" onClick={onUseSampleBoms}>
             Use sample BOMs
