@@ -3,14 +3,13 @@ import { createSampleMappedBoms } from "./bom/sampleBoms";
 import type { MappedBom, UploadedWorkbook } from "./bom/types";
 import { MappingStep } from "./components/MappingStep";
 import { PreviewStep } from "./components/PreviewStep";
-import { PrivacyNotice } from "./components/PrivacyNotice";
 import { ProgressSteps } from "./components/ProgressSteps";
 import { ReportStep } from "./components/ReportStep";
 import { UploadStep } from "./components/UploadStep";
 import openJarLogo from "../assets/Horizontal Logos/1.png";
 
 type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6;
-type FooterIconName = "github" | "linkedin" | "calendar" | "license" | "website";
+type FooterIconName = "github" | "linkedin" | "license" | "website";
 
 export default function App() {
   const [step, setStep] = useState<Step>(0);
@@ -48,22 +47,7 @@ export default function App() {
             <p className="eyebrow">Browser-only BOM comparison</p>
             <h1>Compare two Excel BOMs</h1>
           </div>
-          <PrivacyNotice variant="header" />
         </div>
-        <section className="workflow-summary" aria-label="Workflow summary">
-          <div>
-            <strong>3-stage workflow</strong>
-            <span>Original BOM -&gt; New BOM -&gt; Report</span>
-          </div>
-          <div>
-            <strong>Expected time</strong>
-            <span>2-5 minutes for mapped Excel BOMs</span>
-          </div>
-          <div>
-            <strong>Desktop app</strong>
-            <span>Optimized for desktop and tablet workstations with wide BOM tables.</span>
-          </div>
-        </section>
         <ProgressSteps current={step} />
         <ComparisonContext
           originalWorkbook={originalWorkbook}
@@ -144,9 +128,6 @@ export default function App() {
         <FooterLink icon="linkedin" href="https://www.linkedin.com/company/openjartech/" ariaLabel="OpenJar LinkedIn">
           LinkedIn
         </FooterLink>
-        <FooterLink icon="calendar" href="https://openjartech.com/meetings/csutaria">
-          Talk to me
-        </FooterLink>
         <FooterLink
           icon="license"
           href="https://github.com/csutaria-OpenJar/oss-bom-comparison?tab=MIT-1-ov-file#readme"
@@ -192,8 +173,6 @@ function FooterIcon({ name }: { name: FooterIconName }) {
   const paths: Record<Exclude<FooterIconName, "linkedin">, string> = {
     github:
       "M12 .3a12 12 0 0 0-3.8 23.38c.6.11.82-.26.82-.58v-2.04c-3.34.73-4.04-1.42-4.04-1.42-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.2.08 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.5.99.11-.78.42-1.3.76-1.6-2.67-.31-5.47-1.34-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23A11.4 11.4 0 0 1 12 5.78c1.02 0 2.05.14 3.01.4 2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.24 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.62-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.69.83.57A12 12 0 0 0 12 .3Z",
-    calendar:
-      "M7 2h2v2h6V2h2v2h3a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h3V2Zm15 8H2v12h20V10ZM4 6v2h16V6h-3v2h-2V6H9v2H7V6H4Z",
     license:
       "M5 3h10l4 4v18H5V3Zm9 2H7v20h10V8h-3V5Zm-5 8h6v2H9v-2Zm0 4h6v2H9v-2Zm0 4h4v2H9v-2Z",
     website:

@@ -4,13 +4,13 @@ import { describe, expect, it } from "vitest";
 import App from "./App";
 
 describe("App", () => {
-  it("starts with browser-only privacy and xlsx-only upload guidance", () => {
+  it("starts with a streamlined upload screen", () => {
     render(<App />);
 
-    expect(screen.getByText(/3-stage workflow/i)).toBeInTheDocument();
-    expect(screen.getByText(/Original BOM -> New BOM -> Report/i)).toBeInTheDocument();
-    expect(screen.getByText(/Optimized for desktop and tablet workstations/i)).toBeInTheDocument();
-    expect(screen.getByText(/Your BOM files stay in this browser/i)).toBeInTheDocument();
+    expect(screen.queryByText(/3-stage workflow/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Original BOM -> New BOM -> Report/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Optimized for desktop and tablet workstations/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Your BOM files stay in this browser/i)).not.toBeInTheDocument();
     expect(screen.getByText(/\.xlsx only\. CSV, PDF, and \.xls are not supported\./i)).toBeInTheDocument();
     expect(screen.getByText("Original BOM")).toHaveAttribute("aria-current", "step");
     expect(screen.getByText("New BOM")).toBeInTheDocument();
@@ -63,10 +63,7 @@ describe("App", () => {
       "href",
       "https://www.linkedin.com/company/openjartech/",
     );
-    expect(screen.getByRole("link", { name: /talk to me/i })).toHaveAttribute(
-      "href",
-      "https://openjartech.com/meetings/csutaria",
-    );
+    expect(screen.queryByRole("link", { name: /talk to me/i })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /license terms/i })).toHaveAttribute(
       "href",
       "https://github.com/csutaria-OpenJar/oss-bom-comparison?tab=MIT-1-ov-file#readme",
@@ -75,6 +72,6 @@ describe("App", () => {
       "href",
       "https://openjartech.com/",
     );
-    expect(screen.getAllByTestId("footer-link-icon")).toHaveLength(5);
+    expect(screen.getAllByTestId("footer-link-icon")).toHaveLength(4);
   });
 });
