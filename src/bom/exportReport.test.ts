@@ -60,4 +60,154 @@ describe("exportReport", () => {
     const addedRows = await readSheet(bytes, "Added Rows");
     expect(addedRows[1][1]).toBe("'=PN");
   });
+
+  it("adds an annotated BOM worksheet that respects filters and formula safety", async () => {
+    const result: ComparisonResult = {
+      summary: {
+        addedRows: 0,
+        removedRows: 0,
+        changedFields: 2,
+        manufacturerPartAdds: 1,
+        manufacturerPartRemoves: 1,
+        unmatchedOrBlankRows: 0,
+      },
+      addedRows: [],
+      removedRows: [],
+      changedFields: [
+        {
+          matchKey: "line_item",
+          matchValue: "10",
+          field: "quantity",
+          originalValue: "=1",
+          newValue: "2",
+        },
+        {
+          matchKey: "line_item",
+          matchValue: "10",
+          field: "reference_designators",
+          originalValue: "R1,R2",
+          newValue: "R1,R3",
+          referenceDesignatorDiff: {
+            added: ["R3"],
+            removed: ["R2"],
+          },
+        },
+      ],
+      manufacturerPartAdds: [
+        {
+          matchKey: "line_item",
+          matchValue: "10",
+          lineItem: "10",
+          manufacturerName: "Murata",
+          manufacturerPartNumber: "+NEW",
+        },
+      ],
+      manufacturerPartRemoves: [
+        {
+          matchKey: "line_item",
+          matchValue: "10",
+          lineItem: "10",
+          manufacturerName: "TDK",
+          manufacturerPartNumber: "OLD",
+        },
+      ],
+      unmatchedOrBlankRows: [],
+      matchedRows: [
+        {
+          matchKey: "line_item",
+          matchValue: "10",
+          original: {
+            line_item: "10",
+            internal_part_number: "PN-1",
+            customer_part_number: "C-1",
+            description: "",
+            manufacturer_name: "TDK",
+            manufacturer_part_number: "OLD",
+            quantity: "=1",
+            reference_designators: "R1,R2",
+          },
+          originalRows: [
+            {
+              line_item: "10",
+              internal_part_number: "PN-1",
+              customer_part_number: "C-1",
+              description: "",
+              manufacturer_name: "TDK",
+              manufacturer_part_number: "OLD",
+              quantity: "=1",
+              reference_designators: "R1,R2",
+            },
+          ],
+          next: {
+            line_item: "10",
+            internal_part_number: "PN-1",
+            customer_part_number: "C-1",
+            description: "",
+            manufacturer_name: "Murata",
+            manufacturer_part_number: "+NEW",
+            quantity: "2",
+            reference_designators: "R1,R3",
+          },
+          newRows: [
+            {
+              line_item: "10",
+              internal_part_number: "PN-1",
+              customer_part_number: "C-1",
+              description: "",
+              manufacturer_name: "Murata",
+              manufacturer_part_number: "+NEW",
+              quantity: "2",
+              reference_designators: "R1,R3",
+            },
+          ],
+          changes: [
+            {
+              matchKey: "line_item",
+              matchValue: "10",
+              field: "quantity",
+              originalValue: "=1",
+              newValue: "2",
+            },
+            {
+              matchKey: "line_item",
+              matchValue: "10",
+              field: "reference_designators",
+              originalValue: "R1,R2",
+              newValue: "R1,R3",
+              referenceDesignatorDiff: {
+                added: ["R3"],
+                removed: ["R2"],
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    const filters = {
+      ...DEFAULT_REPORT_FILTERS,
+      changedFields: {
+        ...DEFAULT_REPORT_FILTERS.changedFields,
+        reference_designators: false,
+      },
+    };
+
+    const blob = await buildReportWorkbook(result, filters);
+    const bytes = await blobToArrayBuffer(blob);
+    const annotated = await readSheet(bytes, "Annotated BOM");
+
+    expect(annotated[0]).toEqual([
+      "Original line",
+      "New line",
+      "Internal part number",
+      "Customer part number",
+      "Quantity",
+      "Reference designators",
+      "Manufacturer annotations",
+      "Manufacturer part annotations",
+    ]);
+    expect(annotated[1][4]).toBe("CHANGED: =1 -> 2");
+    expect(annotated[1][5]).toBe("UNCHANGED: R1,R2");
+    expect(annotated[1][7]).toContain("ADDED: +NEW");
+  });
 });

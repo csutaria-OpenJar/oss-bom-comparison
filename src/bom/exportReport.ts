@@ -19,6 +19,7 @@ export async function buildReportWorkbook(result: ComparisonResult, filters: Rep
     ["Rows with blank keys", filtered.summary.unmatchedOrBlankRows],
     ["Active filters", JSON.stringify(filters)],
   ]);
+  appendSheet(sheets, "Annotated BOM", annotatedBomRows(filtered));
 
   if (filters.addedRows) appendSheet(sheets, "Added Rows", bomRows(filtered.addedRows));
   if (filters.removedRows) appendSheet(sheets, "Removed Rows", bomRows(filtered.removedRows));
@@ -134,4 +135,88 @@ function partRows(
       row.manufacturerPartNumber,
     ]),
   ];
+}
+
+function annotatedBomRows(result: ComparisonResult): unknown[][] {
+  return [
+    [
+      "Original line",
+      "New line",
+      "Internal part number",
+      "Customer part number",
+      "Quantity",
+      "Reference designators",
+      "Manufacturer annotations",
+      "Manufacturer part annotations",
+    ],
+    ...result.matchedRows.map((line) => [
+      line.original.line_item,
+      line.next.line_item,
+      annotatedFieldValue(line, "internal_part_number"),
+      annotatedFieldValue(line, "customer_part_number"),
+      annotatedFieldValue(line, "quantity"),
+      annotatedFieldValue(line, "reference_designators"),
+      manufacturerAnnotations(line, "manufacturer_name"),
+      manufacturerAnnotations(line, "manufacturer_part_number"),
+    ]),
+  ];
+}
+
+function annotatedFieldValue(
+  line: ComparisonResult["matchedRows"][number],
+  field: "internal_part_number" | "customer_part_number" | "quantity" | "reference_designators",
+): string {
+  const change = line.changes.find((candidate) => candidate.field === field);
+  if (!change) return `UNCHANGED: ${line.original[field]}`;
+
+  if (field === "reference_designators" && change.referenceDesignatorDiff) {
+    const parts = [`CHANGED: ${change.originalValue} -> ${change.newValue}`];
+    if (change.referenceDesignatorDiff.removed.length) {
+      parts.push(`removed ${change.referenceDesignatorDiff.removed.join(", ")}`);
+    }
+    if (change.referenceDesignatorDiff.added.length) {
+      parts.push(`added ${change.referenceDesignatorDiff.added.join(", ")}`);
+    }
+    return parts.join("; ");
+  }
+
+  return `CHANGED: ${change.originalValue} -> ${change.newValue}`;
+}
+
+function manufacturerAnnotations(
+  line: ComparisonResult["matchedRows"][number],
+  field: "manufacturer_name" | "manufacturer_part_number",
+): string {
+  const originalParts = partRowsByIdentity(line.originalRows);
+  const newParts = partRowsByIdentity(line.newRows);
+  const annotations: string[] = [];
+
+  for (const [identity, originalRow] of originalParts) {
+    if (newParts.has(identity)) {
+      annotations.push(`UNCHANGED: ${originalRow[field]}`);
+    } else {
+      annotations.push(`REMOVED: ${originalRow[field]}`);
+    }
+  }
+
+  for (const [identity, newRow] of newParts) {
+    if (!originalParts.has(identity)) {
+      annotations.push(`ADDED: ${newRow[field]}`);
+    }
+  }
+
+  return annotations.join("; ");
+}
+
+function partRowsByIdentity(rows: BomRow[]): Map<string, BomRow> {
+  const parts = new Map<string, BomRow>();
+  for (const row of rows) {
+    const mpn = normalizeText(row.manufacturer_part_number);
+    if (mpn) parts.set(`${normalizeText(row.manufacturer_name)}|${mpn}`, row);
+  }
+  return parts;
+}
+
+function normalizeText(value: string): string {
+  return value.trim().toLowerCase();
 }

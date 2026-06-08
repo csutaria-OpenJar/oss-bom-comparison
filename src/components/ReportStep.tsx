@@ -239,10 +239,10 @@ export function ReportStep({ original, next }: { original: MappedBom; next: Mapp
                   <td>{change.matchValue}</td>
                   <td>{FIELD_LABELS[change.field]}</td>
                   <td>
-                    <del className="inline-removed">{change.originalValue || "(blank)"}</del>
+                    <del className="inline-removed">{removedValue(change)}</del>
                   </td>
                   <td>
-                    <ins className="inline-added">{change.newValue || "(blank)"}</ins>
+                    <ins className="inline-added">{addedValue(change)}</ins>
                   </td>
                 </tr>
               ))
@@ -553,4 +553,18 @@ function summaryLabel(label: string): string {
   return label
     .replace(/([A-Z])/g, " $1")
     .replace(/^./, (character) => character.toUpperCase());
+}
+
+function removedValue(change: FieldChange): string {
+  if (change.referenceDesignatorDiff?.removed.length) {
+    return `${change.originalValue || "(blank)"} (removed: ${change.referenceDesignatorDiff.removed.join(", ")})`;
+  }
+  return change.originalValue || "(blank)";
+}
+
+function addedValue(change: FieldChange): string {
+  if (change.referenceDesignatorDiff?.added.length) {
+    return `${change.newValue || "(blank)"} (added: ${change.referenceDesignatorDiff.added.join(", ")})`;
+  }
+  return change.newValue || "(blank)";
 }

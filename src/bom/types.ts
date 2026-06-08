@@ -78,6 +78,10 @@ export interface FieldChange {
   field: BomField;
   originalValue: string;
   newValue: string;
+  referenceDesignatorDiff?: {
+    added: string[];
+    removed: string[];
+  };
 }
 
 export interface ManufacturerPartChange {
