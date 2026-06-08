@@ -24,4 +24,35 @@ describe("App", () => {
 
     expect(screen.getByText(".xlsx only. CSV, PDF, and .xls are not supported.")).toBeInTheDocument();
   });
+
+  it("shows a sticky OpenJar logo link and footer resources", () => {
+    render(<App />);
+
+    const logoLink = screen.getByRole("link", { name: /openjar home/i });
+    expect(logoLink).toHaveAttribute("href", "https://openjartech.com/");
+    expect(screen.getByAltText("OpenJar")).toBeInTheDocument();
+    expect(screen.getByRole("banner")).toHaveClass("brand-header");
+
+    expect(screen.getByRole("contentinfo")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /github repository/i })).toHaveAttribute(
+      "href",
+      "https://github.com/csutaria-OpenJar/oss-bom-comparison",
+    );
+    expect(screen.getByRole("link", { name: /openjar linkedin/i })).toHaveAttribute(
+      "href",
+      "https://www.linkedin.com/company/openjartech/",
+    );
+    expect(screen.getByRole("link", { name: /talk to me/i })).toHaveAttribute(
+      "href",
+      "https://openjartech.com/meetings/csutaria",
+    );
+    expect(screen.getByRole("link", { name: /license terms/i })).toHaveAttribute(
+      "href",
+      "https://github.com/csutaria-OpenJar/oss-bom-comparison/blob/main/LICENSE",
+    );
+    expect(screen.getByRole("link", { name: /openjar website/i })).toHaveAttribute(
+      "href",
+      "https://openjartech.com/",
+    );
+  });
 });

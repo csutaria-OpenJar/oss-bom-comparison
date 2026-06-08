@@ -38,10 +38,48 @@ body {
   line-height: 1.5;
 }
 
+a {
+  color: var(--accent-dark);
+}
+
+a:hover {
+  color: var(--accent-deep);
+}
+
 button,
 input,
 select {
   font: inherit;
+}
+
+.page-shell {
+  min-height: 100vh;
+}
+
+.brand-header {
+  align-items: center;
+  background: rgb(255 255 255 / 96%);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 6px 16px rgb(34 34 34 / 6%);
+  display: flex;
+  min-height: 68px;
+  padding: 10px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.brand-link {
+  align-items: center;
+  display: inline-flex;
+  min-height: 44px;
+}
+
+.brand-logo {
+  display: block;
+  height: 42px;
+  object-fit: contain;
+  width: auto;
 }
 
 .app-shell {
@@ -58,6 +96,37 @@ select {
   justify-content: space-between;
   margin-bottom: 24px;
   padding-bottom: 18px;
+}
+
+.app-footer {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  justify-content: center;
+  margin: 0 auto;
+  max-width: 1440px;
+  padding: 24px;
+}
+
+.app-footer a {
+  align-items: center;
+  display: inline-flex;
+  font-size: 14px;
+  font-weight: 750;
+  gap: 7px;
+  min-height: 32px;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.linkedin-icon {
+  display: block;
+  fill: currentColor;
+  height: 17px;
+  width: 17px;
 }
 
 h1,
@@ -484,6 +553,15 @@ legend {
 }
 
 @media (max-width: 900px) {
+  .brand-header {
+    min-height: 60px;
+    padding: 8px 14px;
+  }
+
+  .brand-logo {
+    height: 36px;
+  }
+
   .app-shell {
     padding: 18px 14px 36px;
   }
@@ -500,5 +578,10 @@ legend {
 
   .filter-row {
     grid-template-columns: 1fr;
+  }
+
+  .app-footer {
+    justify-content: flex-start;
+    padding: 20px 14px 28px;
   }
 }

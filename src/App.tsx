@@ -6,6 +6,7 @@ import { PrivacyNotice } from "./components/PrivacyNotice";
 import { ProgressSteps } from "./components/ProgressSteps";
 import { ReportStep } from "./components/ReportStep";
 import { UploadStep } from "./components/UploadStep";
+import openJarLogo from "../assets/Horizontal Logos/1.png";
 
 type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -24,60 +25,81 @@ export default function App() {
   }, []);
 
   return (
-    <main className="app-shell">
-      <header className="topbar">
-        <div>
-          <p className="eyebrow">Browser-only BOM comparison</p>
-          <h1>Compare two Excel BOMs</h1>
-        </div>
-        <PrivacyNotice variant="header" />
+    <div className="page-shell">
+      <header className="brand-header">
+        <a className="brand-link" href="https://openjartech.com/" aria-label="OpenJar home">
+          <img className="brand-logo" src={openJarLogo} alt="OpenJar" />
+        </a>
       </header>
-      <ProgressSteps current={step} />
-      {error && <p className="error">{error}</p>}
-      {step === 0 && (
-        <UploadStep
-          label="Original"
-          onUploaded={(workbook) => {
-            setError("");
-            setOriginalWorkbook(workbook);
-            setStep(1);
-          }}
-        />
-      )}
-      {step === 1 && originalWorkbook && (
-        <MappingStep
-          label="Original"
-          workbook={originalWorkbook}
-          onMapped={(mapped) => {
-            setOriginalBom(mapped);
-            setStep(2);
-          }}
-        />
-      )}
-      {step === 2 && originalBom && <PreviewStep label="Original" mapped={originalBom} onConfirm={() => setStep(3)} />}
-      {step === 3 && (
-        <UploadStep
-          label="New"
-          onUploaded={(workbook) => {
-            setError("");
-            setNewWorkbook(workbook);
-            setStep(4);
-          }}
-        />
-      )}
-      {step === 4 && newWorkbook && originalBom && (
-        <MappingStep
-          label="New"
-          workbook={newWorkbook}
-          requiredMatchKey={originalBom.matchKey}
-          onMapped={(mapped) => {
-            setNewBom(mapped);
-            setStep(5);
-          }}
-        />
-      )}
-      {step === 5 && newBom && <PreviewStep label="New" mapped={newBom} onConfirm={() => setStep(6)} />}
-      {step === 6 && originalBom && newBom && <ReportStep original={originalBom} next={newBom} />}
-    </main>
+      <main className="app-shell">
+        <div className="topbar">
+          <div>
+            <p className="eyebrow">Browser-only BOM comparison</p>
+            <h1>Compare two Excel BOMs</h1>
+          </div>
+          <PrivacyNotice variant="header" />
+        </div>
+        <ProgressSteps current={step} />
+        {error && <p className="error">{error}</p>}
+        {step === 0 && (
+          <UploadStep
+            label="Original"
+            onUploaded={(workbook) => {
+              setError("");
+              setOriginalWorkbook(workbook);
+              setStep(1);
+            }}
+          />
+        )}
+        {step === 1 && originalWorkbook && (
+          <MappingStep
+            label="Original"
+            workbook={originalWorkbook}
+            onMapped={(mapped) => {
+              setOriginalBom(mapped);
+              setStep(2);
+            }}
+          />
+        )}
+        {step === 2 && originalBom && (
+          <PreviewStep label="Original" mapped={originalBom} onConfirm={() => setStep(3)} />
+        )}
+        {step === 3 && (
+          <UploadStep
+            label="New"
+            onUploaded={(workbook) => {
+              setError("");
+              setNewWorkbook(workbook);
+              setStep(4);
+            }}
+          />
+        )}
+        {step === 4 && newWorkbook && originalBom && (
+          <MappingStep
+            label="New"
+            workbook={newWorkbook}
+            requiredMatchKey={originalBom.matchKey}
+            onMapped={(mapped) => {
+              setNewBom(mapped);
+              setStep(5);
+            }}
+          />
+        )}
+        {step === 5 && newBom && <PreviewStep label="New" mapped={newBom} onConfirm={() => setStep(6)} />}
+        {step === 6 && originalBom && newBom && <ReportStep original={originalBom} next={newBom} />}
+      </main>
+      <footer className="app-footer">
+        <a href="https://github.com/csutaria-OpenJar/oss-bom-comparison">GitHub repository</a>
+        <a className="footer-icon-link" href="https://www.linkedin.com/company/openjartech/" aria-label="OpenJar LinkedIn">
+          <svg aria-hidden="true" viewBox="0 0 24 24" className="linkedin-icon">
+            <path d="M20.45 20.45h-3.56v-5.58c0-1.33-.02-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.95v5.67H9.35V9h3.41v1.56h.05c.47-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.44a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12Zm1.78 13.01H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0Z" />
+          </svg>
+          <span>LinkedIn</span>
+        </a>
+        <a href="https://openjartech.com/meetings/csutaria">Talk to me</a>
+        <a href="https://github.com/csutaria-OpenJar/oss-bom-comparison/blob/main/LICENSE">License terms</a>
+        <a href="https://openjartech.com/">OpenJar website</a>
+      </footer>
+    </div>
   );
 }
